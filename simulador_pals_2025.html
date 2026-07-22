@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Simulador PCR Lactante — PALS 2025</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #fff; color: #1a1a1a; padding: 1.5rem; max-width: 780px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.badge { font-size: 11px; padding: 3px 10px; border-radius: 99px; font-weight: 500; }
+.bd { background: #fee2e2; color: #991b1b; }
+.bw { background: #fef3c7; color: #92400e; }
+.bs { background: #d1fae5; color: #065f46; }
+.bi { background: #dbeafe; color: #1e40af; }
+.pals-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: #dbeafe; color: #1e40af; margin-left: 6px; vertical-align: middle; }
+.vitals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem; }
+.vcard { background: #f9fafb; border-radius: 8px; padding: 10px 12px; }
+.vlabel { font-size: 11px; color: #6b7280; margin-bottom: 3px; }
+.vval { font-size: 22px; font-weight: 500; }
+.vstatus { font-size: 10px; margin-top: 2px; }
+.danger { color: #dc2626; } .warn { color: #d97706; } .ok { color: #059669; }
+.monitor { background: #080808; border-radius: 10px; padding: 10px 12px; margin-bottom: 1rem; position: relative; }
+.monitor-lbl { position: absolute; top: 8px; left: 12px; font-size: 10px; color: #00ff41; font-family: monospace; }
+canvas { display: block; width: 100%; }
+.scenario { background: #fff; border: 0.5px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.scenario-tag { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
+.scenario-text { font-size: 14px; line-height: 1.65; }
+.timer { font-family: monospace; font-size: 28px; font-weight: 500; color: #dc2626; text-align: center; }
+.timer-lbl { font-size: 11px; color: #6b7280; text-align: center; margin-bottom: 1rem; }
+.progress-bar { height: 5px; background: #f3f4f6; border-radius: 99px; overflow: hidden; margin-bottom: 4px; }
+.progress-fill { height: 100%; background: #3b82f6; border-radius: 99px; transition: width .4s; }
+.phase-lbl { font-size: 11px; color: #6b7280; margin-bottom: 1rem; }
+.q-lbl { font-size: 13px; color: #374151; font-weight: 500; margin-bottom: 8px; }
+.actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1rem; }
+.abtn { background: #fff; border: 0.5px solid #d1d5db; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; text-align: left; color: #1a1a1a; display: flex; align-items: flex-start; gap: 8px; line-height: 1.45; }
+.abtn:hover:not(:disabled) { background: #f9fafb; }
+.abtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.abtn.correct { border-color: #6ee7b7; background: #d1fae5; color: #065f46; }
+.abtn.incorrect { border-color: #fca5a5; background: #fee2e2; color: #991b1b; }
+.fb { border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.6; margin-bottom: 1rem; border: 0.5px solid; }
+.fb-ok { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.fb-err { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.log { background: #f9fafb; border-radius: 8px; padding: 10px 14px; max-height: 110px; overflow-y: auto; font-size: 11px; font-family: monospace; margin-bottom: 1rem; }
+.le { padding: 2px 0; border-bottom: 0.5px solid #e5e7eb; color: #6b7280; }
+.le.g { color: #059669; } .le.b { color: #dc2626; }
+.next-btn { width: 100%; padding: 10px; border-radius: 8px; border: 0.5px solid #d1d5db; background: #fff; color: #1a1a1a; font-size: 13px; cursor: pointer; margin-bottom: 4px; }
+.next-btn:hover { background: #f9fafb; }
+.score { text-align: center; padding: 2rem 0; }
+.score-n { font-size: 48px; font-weight: 500; margin-bottom: 6px; }
+.row-btns { display: flex; gap: 8px; margin-top: 1rem; justify-content: center; }
+.row-btns button { padding: 9px 16px; border-radius: 8px; border: 0.5px solid #d1d5db; background: #fff; color: #1a1a1a; font-size: 13px; cursor: pointer; }
+.row-btns button:hover { background: #f9fafb; }
+</style>
+</head>
+<body>
+<div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Hospital Simulado · Universidad de La Sabana</div>
+<div class="header">
+  <div>
+    <span style="font-size:15px;font-weight:500;">Simulador PCR — Lactante</span>
+    <span class="pals-tag">PALS 2025</span>
+    <div style="font-size:11px;color:#6b7280;margin-top:2px;">Basado en guías AHA/AAP 2025</div>
+  </div>
+  <span class="badge bw" id="status-badge">ALERTA</span>
+</div>
+
+<div class="vitals">
+  <div class="vcard"><div class="vlabel">FC <span style="font-size:10px;color:#6b7280">lpm</span></div><div class="vval warn" id="v-fc">—</div><div class="vstatus warn" id="s-fc">Por evaluar</div></div>
+  <div class="vcard"><div class="vlabel">SpO₂ <span style="font-size:10px;color:#6b7280">%</span></div><div class="vval warn" id="v-spo2">—</div><div class="vstatus warn" id="s-spo2">Por evaluar</div></div>
+  <div class="vcard"><div class="vlabel">FR <span style="font-size:10px;color:#6b7280">rpm</span></div><div class="vval warn" id="v-fr">—</div><div class="vstatus warn" id="s-fr">Por evaluar</div></div>
+  <div class="vcard"><div class="vlabel">PA <span style="font-size:10px;color:#6b7280">mmHg</span></div><div class="vval warn" id="v-pa">—</div><div class="vstatus warn" id="s-pa">Por evaluar</div></div>
+</div>
+
+<div class="monitor">
+  <div class="monitor-lbl" id="ecg-lbl">ECG — SIN MONITOR CONECTADO</div>
+  <canvas id="ecg" height="68"></canvas>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="prog" style="width:25%"></div></div>
+<div class="phase-lbl" id="phase-lbl">Fase 1 de 4 — Reconocimiento y activación</div>
+<div class="timer" id="timer">00:00</div>
+<div class="timer-lbl">Tiempo de reanimación</div>
+
+<div class="scenario" id="scenario">
+  <div class="scenario-tag">Escenario clínico</div>
+  <div class="scenario-text" id="scenario-text"></div>
+</div>
+
+<div id="fb-area"></div>
+<div class="q-lbl" id="q-lbl"></div>
+<div class="actions" id="actions"></div>
+<div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Registro de acciones</div>
+<div class="log" id="log"><div class="le">00:00 — Paciente ingresa a urgencias</div></div>
+<div id="next-area"></div>
+<div id="score-area"></div>
+
+<script>
+const PHASES = [
+  {
+    label:"Fase 1 de 4 — Reconocimiento y activación", prog:25, ecg:"none", badge:"ALERTA", bc:"bw",
+    vitals:{fc:"—",spo2:"—",fr:"—",pa:"—",fcc:"warn",ss:"Por evaluar",frs:"Por evaluar",pas:"Por evaluar",fcs:"Por evaluar"},
+    ecgLbl:"ECG — SIN MONITOR CONECTADO",
+    scenario:`Eres el médico de urgencias. La madre de <b>Valentina, 8 meses, 8 kg</b>, llega corriendo con la bebé en brazos: <em>"¡Se quedó tiesa y dejó de respirar en casa, hace como 5 minutos!"</em><br><br>La bebé luce pálida, sin movimiento espontáneo. Aún no la has examinado.`,
+    q:"¿Cuál es tu primera acción?",
+    actions:[
+      {t:"Verificar seguridad del entorno, estimular a la bebé (palmada en planta del pie) y gritar pidiendo ayuda",ok:true,fb:"Correcto — secuencia inicial PALS 2025: verificar seguridad → estimular → gritar pidiendo ayuda. Al no obtener respuesta y confirmar apnea, activas el código azul y procedes a evaluar pulso braquial (máximo 10 segundos)."},
+      {t:"Intubar de inmediato dado que la madre refiere apnea de 5 minutos",ok:false,fb:"No todavía. Sin evaluación previa no puedes tomar esa decisión. La intubación sin confirmación de paro y sin intentar primero BVM puede causar demoras fatales. Sigue la secuencia: estimular → activar → evaluar."},
+      {t:"Colocar monitor cardíaco y oxímetro antes de tocar a la paciente",ok:false,fb:"El monitor es útil, pero no es el primer paso. La evaluación clínica (respuesta, respiración, pulso braquial) precede al monitoreo. No debes demorar la detección del paro esperando equipo."},
+      {t:"Administrar oxígeno por mascarilla y esperar al pediatra",ok:false,fb:"Esperar no es una opción ante sospecha de paro. Si la bebé está en PCR, cada segundo sin compresiones reduce la probabilidad de ROSC. Debes evaluar y actuar de inmediato."}
+    ]
+  },
+  {
+    label:"Fase 2 de 4 — Confirmación del paro y manejo inicial de vía aérea", prog:50, ecg:"asystole", badge:"PARO", bc:"bd",
+    vitals:{fc:"0",spo2:"—",fr:"0",pa:"—/—",fcc:"danger",ss:"No detectable",frs:"Apnea",pas:"No detectable",fcs:"Asistolia"},
+    ecgLbl:"ECG — ASISTOLIA",
+    scenario:`Valentina no responde a estímulos. <b>Sin respiración espontánea. Sin pulso braquial palpable</b> en 8 segundos. Activas código azul. Llega un segundo rescatador con el carro de paro.<br><br>Monitor conectado: <b>asistolia</b>. Vía aérea permeable.`,
+    q:"PCR confirmado. ¿Cómo inicias el manejo de la vía aérea? (PALS 2025)",
+    actions:[
+      {t:"Posición neutra (no hiperextensión), 2 ventilaciones boca-boca-nariz con el volumen justo para elevar el tórax, luego iniciar compresiones",ok:true,fb:"Correcto — PALS 2025 reafirma: posición neutra en lactantes (occipucio prominente). Técnica boca-boca-nariz. Volumen mínimo que eleve el tórax. La ventilación es prioritaria en paro pediátrico por su naturaleza hipóxico-asfíctica."},
+      {t:"Intubar con TET 3.5 sin manguito antes de iniciar compresiones para asegurar la vía aérea",ok:false,fb:"La intubación no debe preceder a las compresiones ni a las ventilaciones de rescate. PALS 2025 confirma: la BVM es tan efectiva como el TET en transporte corto. No demores el inicio de RCP por intentar intubar."},
+      {t:"Hiperextender el cuello para abrir la vía aérea al máximo en el lactante",ok:false,fb:"En lactantes la hiperextensión puede colapsar la vía aérea por la anatomía del cuello. La posición correcta es neutra. Un rodete bajo los hombros puede ayudar a mantener esa posición."},
+      {t:"Iniciar compresiones torácicas primero durante 2 minutos, luego ventilar",ok:false,fb:"En paro pediátrico el origen es principalmente hipóxico-asfíctico. PALS 2025 reafirma que la ventilación es una prioridad alta en niños. Las 2 ventilaciones de rescate antes de las compresiones son parte del estándar."}
+    ]
+  },
+  {
+    label:"Fase 3 de 4 — RCP de alta calidad y ritmo desfibrilable", prog:75, ecg:"vfib", badge:"FV", bc:"bd",
+    vitals:{fc:"FV",spo2:"—",fr:"0",pa:"—/—",fcc:"danger",ss:"No detectable",frs:"Apnea",pas:"No detectable",fcs:"Fibrilación V."},
+    ecgLbl:"ECG — FIBRILACIÓN VENTRICULAR",
+    scenario:`RCP en curso. Al conectar el monitor: <b>Fibrilación Ventricular</b>. Sin pulso palpable.<br><br>El equipo pregunta: ¿qué técnica de compresiones usan y cuál es la siguiente acción prioritaria?`,
+    q:"FV en lactante. ¿Cuál es la secuencia correcta según PALS 2025?",
+    actions:[
+      {t:"Desfibrilar 2 J/kg inmediatamente. Compresiones con técnica de 2 pulgares-manos encircling (preferida en 2025). Reanudar RCP sin demora tras la descarga.",ok:true,fb:"Correcto — PALS 2025: FV/TVSP → desfibrilación inmediata 2 J/kg. La técnica de 2 pulgares con manos encircling es la preferida (mejor profundidad, menos fatiga). La técnica de 2 dedos sobre el esternón fue ELIMINADA en 2025 por inefectividad. Reanudar RCP inmediatamente tras la descarga."},
+      {t:"Administrar adrenalina 0.01 mg/kg IV antes de desfibrilar para optimizar la perfusión coronaria",ok:false,fb:"La desfibrilación es la prioridad absoluta en FV/TVSP. PALS 2025: para ritmo desfibrilable inicial, epinefrina después de 2 intentos de desfibrilación, o antes solo si la desfibrilación no es posible de inmediato."},
+      {t:"Continuar RCP 2 minutos más antes de analizar el ritmo, la FV puede revertir sola",ok:false,fb:"La FV no revierte sola. Cada minuto sin desfibrilación reduce la probabilidad de éxito. PALS 2025 enfatiza: identificado ritmo desfibrilable → descarga inmediata. Intervalo entre última compresión y choque debe ser < 10 segundos."},
+      {t:"Usar técnica de 2 dedos sobre el esternón para las compresiones y desfibrilar con 4 J/kg",ok:false,fb:"Dos errores: la técnica de 2 dedos fue ELIMINADA en PALS 2025 por datos de inefectividad en profundidad adecuada. Y la primera dosis de desfibrilación es 2 J/kg — los 4 J/kg son para descargas posteriores."}
+    ]
+  },
+  {
+    label:"Fase 4 de 4 — Cuidados post-ROSC", prog:100, ecg:"sinus", badge:"ROSC", bc:"bw",
+    vitals:{fc:"128",spo2:"88",fr:"22",pa:"66/38",fcc:"warn",ss:"Hipoxemia grave",frs:"Taquipnea",pas:"Hipotensión",fcs:"Taquicardia"},
+    ecgLbl:"ECG — RITMO SINUSAL",
+    scenario:`Tras 2 descargas (2 J/kg → 4 J/kg) y epinefrina 0.01 mg/kg: <b>ROSC</b>. Ritmo sinusal 128 lpm, pulso palpable. SpO₂ 88% con FiO₂ 100%. PA 66/38 mmHg. Valentina no recupera conciencia.<br><br>El equipo espera tus objetivos de estabilización.`,
+    q:"Post-ROSC en lactante — ¿cuál es el manejo correcto según PALS 2025?",
+    actions:[
+      {t:"Titular O₂ para SpO₂ 94–99%. Temperatura central < 37.5 °C. PA sistólica > percentil 10. Bolo 5–10 mL/kg si hay sospecha de disfunción miocárdica post-paro.",ok:true,fb:"Correcto — metas PALS 2025 post-ROSC: SpO₂ 94–99% (hiperoxia es lesiva); temperatura central máximo 37.5 °C (prevenir hiperthermia mejora outcomes neurológicos); PA sistólica > percentil 10 (~70 mmHg en lactante); si sospecha disfunción miocárdica, bolo reducido 5–10 mL/kg en 10–20 min con reevaluación."},
+      {t:"Mantener FiO₂ 100% hasta llegar a UCIP para garantizar oxigenación máxima",ok:false,fb:"La hiperoxia post-ROSC es perjudicial. PALS 2025 es explícito: SpO₂ 100% puede corresponder a PaO₂ de 80–500 mmHg — el exceso de O₂ genera radicales libres y agrava el daño neurológico. Titular para SpO₂ 94–99%."},
+      {t:"Iniciar hipotermia terapéutica a 33 °C de inmediato — es el estándar post-ROSC pediátrico",ok:false,fb:"No es la recomendación actual. PALS 2025 indica: prevenir hiperthermia (T > 37.5 °C) es crítico. La hipotermia terapéutica se considera pero no es rutina — la evidencia en pediatría es controvertida y debe individualizarse."},
+      {t:"Administrar bolo de 20 mL/kg de SSN para tratar la hipotensión y transferir a UCIP",ok:false,fb:"Con sospecha de disfunción miocárdica post-paro, 20 mL/kg puede empeorar la función ventricular. PALS 2025: bolos reducidos 5–10 mL/kg en 10–20 min con reevaluación. Si shock refractario a fluidos → soporte vasoactivo (epinefrina 0.03–0.2 mcg/kg/min o norepinefrina 0.05–0.5 mcg/kg/min)."}
+    ]
+  }
+];
+
+let phase=0,score=0,answered=false,secs=0,tInt=null,ecgAnim=null,ecgT=0,ecgType="none";
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+
+function addLog(msg,cls=''){
+  const log=document.getElementById('log');
+  const d=document.createElement('div');
+  d.className='le'+(cls?' '+cls:'');
+  d.textContent=fmt(secs)+' — '+msg;
+  log.appendChild(d);
+  log.scrollTop=log.scrollHeight;
+}
+
+function updateVitals(v){
+  document.getElementById('v-fc').textContent=v.fc;
+  document.getElementById('v-spo2').textContent=v.spo2;
+  document.getElementById('v-fr').textContent=v.fr;
+  document.getElementById('v-pa').textContent=v.pa;
+  ['fc','spo2','fr','pa'].forEach(k=>{
+    document.getElementById('v-'+k).className='vval '+v.fcc;
+    document.getElementById('s-'+k).className='vstatus '+v.fcc;
+  });
+  document.getElementById('s-fc').textContent=v.fcs;
+  document.getElementById('s-spo2').textContent=v.ss;
+  document.getElementById('s-fr').textContent=v.frs;
+  document.getElementById('s-pa').textContent=v.pas;
+  const badge=document.getElementById('status-badge');
+  const p=PHASES[phase];
+  badge.textContent=p.badge;
+  badge.className='badge '+p.bc;
+}
+
+const canvas=document.getElementById('ecg');
+const ctx=canvas.getContext('2d');
+function drawECG(){
+  const W=canvas.offsetWidth||720;
+  canvas.width=W;
+  const H=68;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#00ff41';
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ecgT=(ecgT+2.5)%W;
+  for(let x=0;x<W;x++){
+    const t=((x+ecgT)%W)/W;
+    let y=H/2;
+    if(ecgType==='asystole') y=H/2+(Math.random()*1.2-.6);
+    else if(ecgType==='vfib') y=H/2+Math.sin(t*Math.PI*28)*(14+Math.random()*8)*(0.7+Math.random()*0.6);
+    else if(ecgType==='sinus'){
+      const b=(t*4.5)%1;
+      if(b<.04)y=H/2-4;else if(b<.07)y=H/2+5;else if(b<.10)y=H/2-26;else if(b<.13)y=H/2+10;else if(b<.16)y=H/2-3;else if(b>.24&&b<.34)y=H/2-5;else y=H/2;
+    }
+    x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ecgAnim=requestAnimationFrame(drawECG);
+}
+
+function renderPhase(){
+  const p=PHASES[phase];
+  answered=false;
+  ecgType=p.ecg;
+  document.getElementById('ecg-lbl').textContent=p.ecgLbl;
+  updateVitals(p.vitals);
+  document.getElementById('prog').style.width=p.prog+'%';
+  document.getElementById('phase-lbl').textContent=p.label;
+  document.getElementById('scenario-text').innerHTML=p.scenario;
+  document.getElementById('q-lbl').textContent=p.q;
+  document.getElementById('fb-area').innerHTML='';
+  document.getElementById('next-area').innerHTML='';
+  document.getElementById('score-area').innerHTML='';
+  const grid=document.getElementById('actions');
+  grid.innerHTML='';
+  p.actions.forEach((a,i)=>{
+    const btn=document.createElement('button');
+    btn.className='abtn';
+    btn.innerHTML=`<i class="ti ti-circle-dashed" style="font-size:14px;flex-shrink:0;margin-top:1px"></i>${a.t}`;
+    btn.onclick=()=>handleAction(a,i);
+    grid.appendChild(btn);
+  });
+}
+
+function handleAction(action,idx){
+  if(answered)return;
+  answered=true;
+  const btns=document.querySelectorAll('.abtn');
+  btns.forEach((b,i)=>{b.disabled=true;if(PHASES[phase].actions[i].ok)b.classList.add('correct');});
+  btns[idx].classList.add(action.ok?'correct':'incorrect');
+  if(action.ok)score++;
+  addLog((action.ok?'✓ ':'✗ ')+action.t.substring(0,55)+'…',action.ok?'g':'b');
+  document.getElementById('fb-area').innerHTML=`<div class="fb ${action.ok?'fb-ok':'fb-err'}"><strong>${action.ok?'Correcto':'No es la mejor opción'}:</strong> ${action.fb}</div>`;
+  const na=document.getElementById('next-area');
+  if(phase<PHASES.length-1){
+    const nb=document.createElement('button');
+    nb.className='next-btn';
+    nb.textContent='Continuar a fase '+(phase+2)+' →';
+    nb.onclick=()=>{phase++;renderPhase();};
+    na.appendChild(nb);
+  } else {
+    showFinal();
+  }
+}
+
+function showFinal(){
+  const pct=Math.round(score/PHASES.length*100);
+  const cls=pct>=75?'ok':pct>=50?'warn':'danger';
+  const msg=score===4?'Manejo excelente — dominas el algoritmo PALS 2025.':score>=3?'Muy bien. Revisa los puntos marcados.':score>=2?'Buen intento. Repasa el algoritmo completo.':'Necesitas repasar el algoritmo PALS 2025.';
+  if(tInt)clearInterval(tInt);
+  document.getElementById('score-area').innerHTML=`
+    <div class="score">
+      <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Resultado final</div>
+      <div class="score-n ${cls}">${score}/${PHASES.length}</div>
+      <div style="font-size:14px;color:#6b7280;">${pct}% — ${msg}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:6px;">Tiempo total: ${fmt(secs)}</div>
+      <div class="row-btns">
+        <button onclick="restart()">Reiniciar simulación</button>
+      </div>
+    </div>`;
+}
+
+function restart(){
+  phase=0;score=0;secs=0;
+  document.getElementById('timer').textContent='00:00';
+  document.getElementById('log').innerHTML='<div class="le">00:00 — Paciente ingresa a urgencias</div>';
+  if(tInt)clearInterval(tInt);
+  startTimer();
+  renderPhase();
+}
+
+function startTimer(){tInt=setInterval(()=>{secs++;document.getElementById('timer').textContent=fmt(secs);},1000);}
+startTimer();
+renderPhase();
+drawECG();
+</script>
+</body>
+</html>

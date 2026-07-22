@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Falla Ventilatoria Pediátrica</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f3f4f6;color:#111827;min-height:100vh;}
+
+.top-bar{background:#1e3a5f;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.top-title{font-size:14px;font-weight:500;}
+.top-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.badge{background:#dbeafe;color:#1e40af;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;}
+.timer{font-family:monospace;font-size:22px;font-weight:600;color:#fbbf24;text-align:right;}
+.timer-lbl{font-size:10px;opacity:.6;text-align:right;}
+
+.phase-nav{display:flex;gap:0;margin-bottom:14px;border-radius:10px;overflow:hidden;border:.5px solid #e5e7eb;}
+.pnav-btn{flex:1;padding:10px 8px;text-align:center;font-size:11px;font-weight:500;background:#f9fafb;color:#6b7280;border-right:.5px solid #e5e7eb;}
+.pnav-btn:last-child{border-right:none;}
+.pnav-btn.active{background:#1e3a5f;color:#fff;}
+.pnav-btn.done{background:#d1fae5;color:#065f46;}
+.pnav-num{font-size:14px;font-weight:700;display:block;margin-bottom:2px;}
+
+.container{max-width:780px;margin:0 auto;padding:20px 16px;}
+
+/* Monitor */
+.monitor{background:#060606;border-radius:12px;padding:12px 14px 8px;margin-bottom:14px;}
+.mon-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.mon-lbl{font-size:11px;font-family:monospace;letter-spacing:.04em;}
+.mon-right{font-size:10px;color:#4b5563;font-family:monospace;}
+.waveform-row{display:flex;gap:8px;margin-bottom:6px;}
+.waveform-col{flex:1;}
+.waveform-label{font-size:9px;font-family:monospace;margin-bottom:2px;}
+
+/* Vitals */
+.vitals{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}
+.vcard{background:#fff;border-radius:8px;padding:8px 10px;border:.5px solid #e5e7eb;}
+.vlabel{font-size:10px;color:#6b7280;margin-bottom:2px;}
+.vval{font-size:18px;font-weight:600;}
+.vsub{font-size:10px;margin-top:2px;}
+.v-ok{color:#059669;} .v-warn{color:#d97706;} .v-danger{color:#dc2626;} .v-pending{color:#9ca3af;}
+
+/* Cards */
+.card{background:#fff;border:.5px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.case-title{font-size:14px;font-weight:600;}
+.case-sub{font-size:11px;color:#6b7280;}
+.case-text{font-size:13px;line-height:1.65;color:#374151;}
+
+.alert-box{border-radius:8px;padding:9px 13px;margin-top:10px;font-size:12px;line-height:1.6;}
+.alert-warn{background:#fef3c7;border:.5px solid #fcd34d;color:#92400e;}
+.alert-info{background:#dbeafe;border:.5px solid #93c5fd;color:#1e40af;}
+.alert-danger{background:#fee2e2;border:.5px solid #fca5a5;color:#991b1b;}
+
+/* Pregunta */
+.q-label{font-size:11px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.q-text{font-size:14px;font-weight:500;margin-bottom:12px;line-height:1.5;}
+.opts{display:flex;flex-direction:column;gap:7px;}
+.opt{background:#fff;border:.5px solid #d1d5db;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:13px;line-height:1.45;display:flex;align-items:flex-start;gap:10px;transition:background .1s;}
+.opt:hover:not(.disabled){background:#f9fafb;}
+.opt.disabled{opacity:.45;cursor:not-allowed;}
+.opt.correct{border-color:#6ee7b7;background:#d1fae5;color:#065f46;}
+.opt.incorrect{border-color:#fca5a5;background:#fee2e2;color:#991b1b;}
+.opt-letter{font-size:11px;font-weight:700;min-width:18px;color:#6b7280;margin-top:1px;flex-shrink:0;}
+.opt.correct .opt-letter{color:#065f46;}
+.opt.incorrect .opt-letter{color:#991b1b;}
+
+.fb{border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.6;margin-top:12px;border:.5px solid;}
+.fb-ok{background:#d1fae5;color:#065f46;border-color:#6ee7b7;}
+.fb-err{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
+.key-box{background:#eff6ff;border:.5px solid #93c5fd;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:12px;color:#1e40af;line-height:1.6;}
+.key-box strong{display:block;margin-bottom:4px;}
+
+/* Criterios */
+.criterios-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.crit-card{border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.6;}
+.crit-ok{background:#d1fae5;border:.5px solid #6ee7b7;color:#065f46;}
+.crit-warn{background:#fef3c7;border:.5px solid #fcd34d;color:#92400e;}
+.crit-danger{background:#fee2e2;border:.5px solid #fca5a5;color:#991b1b;}
+.crit-title{font-weight:700;margin-bottom:4px;}
+
+/* Botones */
+.btn-primary{background:#1e3a5f;color:#fff;border:none;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;width:100%;margin-top:10px;}
+.btn-primary:hover{background:#1d4ed8;}
+.btn-secondary{background:#fff;color:#374151;border:.5px solid #d1d5db;padding:11px 24px;border-radius:8px;font-size:13px;cursor:pointer;width:100%;margin-top:8px;}
+
+/* Log */
+.log-wrap{background:#fff;border:.5px solid #e5e7eb;border-radius:10px;padding:10px 14px;margin-bottom:14px;}
+.log-title{font-size:11px;color:#6b7280;font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
+.log-list{max-height:80px;overflow-y:auto;font-family:monospace;font-size:11px;}
+.log-entry{padding:2px 0;border-bottom:.5px solid #f3f4f6;color:#6b7280;}
+.log-entry.good{color:#059669;} .log-entry.bad{color:#dc2626;}
+
+/* Final */
+.final-card{background:#fff;border:.5px solid #e5e7eb;border-radius:12px;padding:28px;text-align:center;}
+.final-score{font-size:56px;font-weight:700;margin:12px 0 6px;}
+.final-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+.final-item{background:#f9fafb;border-radius:8px;padding:12px;}
+.final-val{font-size:20px;font-weight:700;color:#1e3a5f;}
+.final-lbl{font-size:11px;color:#6b7280;margin-top:2px;}
+.summary{background:#f9fafb;border-radius:10px;padding:14px 16px;text-align:left;margin-bottom:16px;}
+.summary-item{font-size:12px;padding:4px 0;border-bottom:.5px solid #e5e7eb;}
+.summary-item:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-title">Simulador Falla Ventilatoria Pediátrica &nbsp;<span class="badge">PALS 2025</span></div>
+    <div class="top-sub">Hospital Simulado · Universidad de La Sabana</div>
+  </div>
+  <div>
+    <div class="timer" id="timer">00:00</div>
+    <div class="timer-lbl">tiempo de caso</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="phase-nav" id="phase-nav"></div>
+  <div class="vitals" id="vitals-grid"></div>
+
+  <!-- Monitor respiratorio -->
+  <div class="monitor">
+    <div class="mon-hdr">
+      <div class="mon-lbl" id="mon-label" style="color:#00ff41">MONITOR RESPIRATORIO</div>
+      <div class="mon-right">FR · SpO₂ · ETCO₂</div>
+    </div>
+    <div class="waveform-row">
+      <div class="waveform-col">
+        <div class="waveform-label" style="color:#00ff41">Curva respiratoria</div>
+        <canvas id="resp-wave" height="50"></canvas>
+      </div>
+      <div class="waveform-col">
+        <div class="waveform-label" style="color:#60a5fa">SpO₂ pletismografía</div>
+        <canvas id="spo2-wave" height="50"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="main-content"></div>
+
+  <div class="log-wrap">
+    <div class="log-title">Registro de acciones</div>
+    <div class="log-list" id="log-list">
+      <div class="log-entry">00:00 — Caso iniciado. Paciente en urgencias pediátricas.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ESTADO ────────────────────────────────────────────────────────────────
+let phase=0, qStep=0, answered=false;
+let scores={correct:0,total:0};
+let phaseScores=[0,0,0];
+let timerSec=0, timerInt=null;
+let animFrames=[];
+let wavePhase=0;
+
+// ── DATOS ─────────────────────────────────────────────────────────────────
+const PHASES=[
+  {
+    label:'Fase 1', sub:'Reconocimiento',
+    avatarBg:'#fef3c7', avatar:'👦',
+    monColor:'#fbbf24', monLabel:'PATRÓN RESPIRATORIO ALTERADO',
+    respType:'rapid', spo2Type:'low',
+    vitals:[
+      {l:'FR',v:'52',cls:'v-danger',s:'rpm — Taquipnea'},
+      {l:'SpO₂',v:'85%',cls:'v-danger',s:'↓ Bogotá: normal ≥ 88-90%'},
+      {l:'FC',cls:'v-warn',v:'138',s:'lpm — Taquicardia'},
+      {l:'PA',v:'88/52',cls:'v-warn',s:'mmHg — Límite'},
+      {l:'Temp',v:'38.8°C',cls:'v-warn',s:'Febril'},
+    ],
+    scenario:`<strong>Valentina, 4 años, 18 kg.</strong> Traída a urgencias pediátricas en Bogotá (2.640 m.s.n.m.) por dificultad respiratoria progresiva de 6 horas. Antecedente de asma. Al examen: FR 52 rpm, SpO₂ 85% con FiO₂ 21% <em style="color:#dc2626">(en Bogotá la SpO₂ normal en niños mayores de 1 año es ≥ 88–90% — este valor indica hipoxemia y requiere O₂ suplementario inmediato)</em>, FC 138 lpm, uso intenso de músculos accesorios (retracción subcostal, intercostal y supraesternal), aleteo nasal, sibilancias espiratorias bilaterales, quejido al final de la espiración.`,
+    alert:{cls:'alert-warn',text:'Identifica el tipo de dificultad respiratoria y el nivel de gravedad antes de actuar. ¿Es falla ventilatoria o insuficiencia respiratoria hipoxémica?'},
+    questions:[
+      {
+        label:'Paso 1 — Reconocimiento del patrón',
+        q:'Valentina tiene FR 52, SpO₂ 85%, quejido espiratorio, sibilancias y uso de músculos accesorios. ¿Cuál es el diagnóstico fisiopatológico correcto?',
+        opts:[
+          {t:'Insuficiencia respiratoria hipoxémica — SpO₂ baja que mejora con O₂ suplementario, sin retención de CO₂ primaria',ok:false,fb:'Esta descripción no es la más precisa para Valentina en este momento. Aunque la SpO₂ de 85% indica hipoxemia que requiere O₂ suplementario inmediato, el patrón dominante es el trabajo respiratorio aumentado por obstrucción (sibilancias, quejido, retracción intensa), que apunta a falla ventilatoria obstructiva. NOTA IMPORTANTE: en Bogotá (2.640 m.s.n.m.), la SpO₂ normal en niños mayores de 1 año es ≥ 88–90% y el umbral para O₂ suplementario es ≤ 85% (Dr. Ucrós, Fundación Santa Fe de Bogotá). El 85% de Valentina ya indica hipoxemia y exige O₂ — no se debe esperar a la falla ventilatoria para actuar.'},
+          {t:'Falla ventilatoria obstructiva — incapacidad de movilizar volumen corriente adecuado por obstrucción de la vía aérea inferior, con riesgo de hipercapnia progresiva',ok:true,fb:'Correcto. Valentina tiene falla ventilatoria obstructiva (crisis asmática severa). El mecanismo es obstrucción al flujo aéreo → ventilación alveolar ineficiente → riesgo creciente de retención de CO₂. En este momento no tenemos gasometría, por lo que no podemos afirmar hipercapnia — pero el patrón clínico (obstrucción severa + trabajo respiratorio intenso) obliga a anticiparla. Para confirmarla se necesitaría una gasometría arterial o capnografía.'},
+          {t:'Shock séptico con falla orgánica múltiple — fiebre, taquicardia y taquipnea orientan a sepsis',ok:false,fb:'La fiebre y taquicardia pueden acompañar una crisis asmática severa sin ser sepsis. El patrón dominante es la obstrucción respiratoria (sibilancias, retracción, quejido) — no hay signos de hipoperfusión periférica que hagan prioritario el manejo de shock sobre el respiratorio.'},
+          {t:'Crup severo — obstrucción de la vía aérea superior con estridor inspiratorio',ok:false,fb:'El crup produce estridor INSPIRATORIO por obstrucción supraglótica/subglótica. Valentina tiene sibilancias ESPIRATORIAS y quejido — patrón de obstrucción de vía aérea INFERIOR (broncoespasmo). Son entidades distintas con manejo diferente.'},
+        ],
+        key:'Falla ventilatoria = incapacidad de mover aire → riesgo de retención de CO₂ (confirmar con gasometría o capnografía). Insuficiencia respiratoria hipoxémica = falla en el intercambio gaseoso → hipoxia sin retención primaria de CO₂. ALTITUD BOGOTÁ (2.640 m): SpO₂ normal ≥ 88–90% en niños > 1 año · umbral para O₂ suplementario ≤ 85% (Ucrós et al., Fundación Santa Fe de Bogotá; AIEPI). MENSAJE CENTRAL: el O₂ suplementario se indica ante hipoxemia o dificultad respiratoria significativa — NO se espera la falla ventilatoria para actuar.'
+      },
+      {
+        label:'Paso 2 — Signos de falla ventilatoria inminente',
+        q:'¿Cuál de los siguientes hallazgos indica que Valentina está en FALLA VENTILATORIA INMINENTE y requiere intervención urgente?',
+        opts:[
+          {t:'FR 52 rpm con sibilancias — la taquipnea sola indica gravedad pero no inminencia de paro',ok:false,fb:'La FR elevada con sibilancias es preocupante pero no define inminencia por sí sola. Los signos de inminencia son los que indican agotamiento del paciente o falla en el intercambio gaseoso a pesar del esfuerzo.'},
+          {t:'SpO₂ 85% con FiO₂ 21% — la desaturación es el principal indicador de falla inminente',ok:false,fb:'La SpO₂ de 85% en Bogotá indica hipoxemia que requiere O₂ suplementario inmediato — pero NO es el único ni el mejor marcador de inminencia de falla ventilatoria. PUNTO CLAVE: el O₂ suplementario debe iniciarse ante hipoxemia o dificultad respiratoria significativa, sin esperar la falla ventilatoria. Sin embargo, la inminencia de paro ventilatoria se evalúa por el agotamiento muscular (bradipnea, silencio auscultatorio) y el estado neurológico, no solo por la SpO₂.'},
+          {t:'Quejido espiratorio, bradipnea progresiva, disminución del murmullo vesicular y alteración del estado de conciencia',ok:true,fb:'Correcto. Los signos de falla ventilatoria INMINENTE incluyen: quejido (signo de auto-PEEP protector agotándose), bradipnea que reemplaza a la taquipnea (agotamiento muscular), silencio auscultatorio (tórax atrapado sin flujo de aire) y alteración neurológica (hipercapnia severa). Cualquiera de estos requiere acción inmediata.'},
+          {t:'Temperatura 38.8°C con FC 138 lpm — la respuesta inflamatoria puede precipitar el paro',ok:false,fb:'La fiebre y taquicardia son consecuencias del estrés respiratorio, no signos de inminencia de paro ventilatoria. Los signos de inminencia son neurológicos (somnolencia, agitación) y de agotamiento muscular (bradipnea, silencio auscultatorio).'},
+        ],
+        key:'Signos de falla ventilatoria INMINENTE: quejido + bradipnea (agotamiento) + silencio auscultatorio + alteración del estado de conciencia. En asma: "tórax silencioso" = emergencia. La SpO₂ puede engañar — evaluar siempre el trabajo respiratorio y el estado neurológico.'
+      }
+    ]
+  },
+  {
+    label:'Fase 2', sub:'Manejo inicial',
+    avatarBg:'#fee2e2', avatar:'👧',
+    monColor:'#f87171', monLabel:'DETERIORO — TRABAJO RESPIRATORIO AUMENTADO',
+    respType:'labored', spo2Type:'very_low',
+    vitals:[
+      {l:'FR',v:'58',cls:'v-danger',s:'rpm — ↑ Agotamiento'},
+      {l:'SpO₂',v:'82%',cls:'v-danger',s:'↓↓ Con O₂ 40% — falla refractaria'},
+      {l:'FC',cls:'v-danger',v:'152',s:'lpm — Taquicardia'},
+      {l:'PA',v:'84/48',cls:'v-danger',s:'mmHg — Hipotensión'},
+      {l:'GCS',v:'13/15',cls:'v-warn',s:'↓ Somnoliente'},
+    ],
+    scenario:`<strong>15 minutos después.</strong> A pesar de salbutamol nebulizado y O₂ al 40%, Valentina empeora. FR 58 rpm, SpO₂ 82%, FC 152 lpm. Está somnolienta, con retracción supraesternal marcada, uso de músculos del cuello, sibilancias que ahora son menos audibles. El padre pregunta si "se está cansando".`,
+    alert:{cls:'alert-danger',text:'SEÑAL DE ALARMA: la disminución de las sibilancias NO indica mejoría — puede indicar silencio auscultatorio por agotamiento. El padre tiene razón.'},
+    questions:[
+      {
+        label:'Paso 3 — Manejo de la vía aérea',
+        q:'Valentina tiene SpO₂ 82% con O₂ 40%, somnolencia (GCS 13) y silencio auscultatorio. ¿Cuál es la secuencia de manejo correcta para el médico general?',
+        opts:[
+          {t:'Aumentar el flujo de O₂ al 100% y repetir salbutamol — el broncoespasmo puede revertir',ok:false,fb:'Con GCS 13, SpO₂ 82% y silencio auscultatorio ya se superó el umbral de manejo solo con broncodilatadores. El paciente tiene falla ventilatoria con deterioro neurológico — continuar con broncodilatadores sin soporte ventilatorio en este momento representa un riesgo de paro inminente.'},
+          {t:'Iniciar VPP con BVM de inmediato + activar equipo especializado (anestesiología/intensivismo) para asegurar vía aérea definitiva',ok:true,fb:'Correcto. Esta es la competencia del médico general ante falla ventilatoria con deterioro neurológico: (1) Iniciar VPP con BVM de inmediato — es la acción que salva vidas en los primeros minutos. (2) Activar anestesiología o intensivismo pediatrico para intubación — la intubación en crisis asmática severa requiere equipo especializado y fármacos específicos. El médico general debe reconocer la indicación, estabilizar con BVM y llamar al equipo correcto.'},
+          {t:'Intubar de inmediato con los recursos disponibles — en una emergencia no se puede esperar al especialista',ok:false,fb:'La intubación pediátrica en crisis asmática severa es un procedimiento de alta complejidad que requiere fármacos específicos (inductor broncodilatador como ketamina, paralizante), equipo y entrenamiento avanzado. El intento de intubación sin preparación adecuada puede resultar en laringoespasmo, barotrauma o paro. La conducta correcta del médico general es BVM efectiva + llamar al especialista, no intubar de forma autónoma sin entrenamiento específico.'},
+          {t:'Punción torácica bilateral — el silencio auscultatorio indica neumotórax a tensión',ok:false,fb:'El neumotórax a tensión es un diagnóstico diferencial importante, pero el contexto (asma + broncoespasmo progresivo + deterioro gradual) hace más probable el agotamiento muscular. La punción sin diagnóstico confirmado puede ser dañina. Si hubiera hipotensión + silencio unilateral + desviación traqueal, la sospecha sería más fuerte.'},
+        ],
+        key:'COMPETENCIA DEL MÉDICO GENERAL en falla ventilatoria con indicación de vía aérea: (1) Reconocer la indicación · (2) Iniciar BVM de alta calidad — esto es lo que salva vidas · (3) Activar anestesiología/intensivismo para intubación. La intubación de secuencia rápida en pediatría es competencia del especialista. El médico general que domina la BVM hace la diferencia crítica mientras llega el equipo.'
+      },
+      {
+        label:'Paso 4 — BVM: la competencia que salva vidas',
+        q:'Mientras llega el equipo especializado, estás ventilando a Valentina con BVM. ¿Cuál es la técnica correcta en un niño de 4 años?',
+        opts:[
+          {t:'Sello C-E con una mano, frecuencia 12–20/min, volumen que produzca elevación torácica visible, mínima presión necesaria',ok:true,fb:'Correcto. Esta es la competencia fundamental del médico general. Técnica C-E: dedos 3-4-5 en "E" bajo la mandíbula levantándola hacia la mascarilla, dedos 1-2 en "C" sellando. FR 12–20/min para 1–8 años. Volumen = solo elevación torácica visible (6–8 mL/kg). Presión mínima necesaria — el exceso produce barotrauma, especialmente peligroso en asma. Una BVM bien ejecutada puede sostener al paciente los minutos críticos mientras llega el equipo de intubación.'},
+          {t:'Dos manos sobre la mascarilla, frecuencia 30/min, presión máxima para asegurar ventilación completa',ok:false,fb:'Tres errores: la técnica de 2 manos requiere un segundo operador para comprimir la bolsa. FR 30/min es excesiva — produce hiperinsuflación y colapso venoso, especialmente grave en asma. Presión máxima → barotrauma → neumotórax.'},
+          {t:'Mascarilla solo sobre la nariz, boca abierta, frecuencia 40/min',ok:false,fb:'La mascarilla debe cubrir nariz Y boca con sello completo. FR 40/min corresponde a frecuencias neonatales — no aplica en niño de 4 años. Usar 12–20/min.'},
+          {t:'Hiperextensión máxima del cuello para abrir la vía aérea',ok:false,fb:'En pediatría la hiperextensión extrema colapsa la vía aérea blanda. La posición correcta es "olfateando" (sniffing): extensión moderada con occipucio ligeramente elevado en niños, posición casi neutra en lactantes.'},
+        ],
+        key:'BVM efectiva = competencia central del médico general en falla ventilatoria. Sello C-E · Posición olfateando · FR 12-20/min · Volumen = elevación torácica visible · Presión mínima. Con 2 operadores: uno sella con 2 manos, otro comprime la bolsa — mejor sello y menor riesgo de fuga. Una BVM bien ejecutada sostiene al paciente mientras llega anestesiología/intensivismo para la intubación definitiva.'
+      }
+    ]
+  },
+  {
+    label:'Fase 3', sub:'Ventilación mecánica',
+    avatarBg:'#fce7f3', avatar:'👧',
+    monColor:'#a78bfa', monLabel:'INTUBADA — VENTILACIÓN MECÁNICA',
+    respType:'mechanical', spo2Type:'recovering',
+    vitals:[
+      {l:'FR',v:'20',cls:'v-ok',s:'rpm — Ventilador'},
+      {l:'SpO₂',v:'96%',cls:'v-ok',s:'↑ FiO₂ 60%'},
+      {l:'FC',cls:'v-warn',v:'128',s:'lpm — Mejorando'},
+      {l:'PIP',v:'28',cls:'v-warn',s:'cmH₂O — Presión'},
+      {l:'GCS',v:'3T',cls:'v-pending',s:'Sedada — TET'},
+    ],
+    scenario:`<strong>35 minutos después.</strong> Valentina fue intubada con TET 5.0 con balón. Ventilación mecánica iniciada. SpO₂ sube a 96% con FiO₂ 60%. FC 128 lpm. Está sedada. El residente pregunta cómo ajustar los parámetros del ventilador para una paciente asmática.`,
+    alert:{cls:'alert-info',text:'En asma/broncoespasmo: estrategia de hipercapnia permisiva. El objetivo NO es normalizar el CO₂ a toda costa — es evitar el barotrauma y permitir tiempo espiratorio adecuado.'},
+    questions:[
+      {
+        label:'Paso 5 — Parámetros ventilatorios en asma',
+        q:'Valentina intubada por crisis asmática severa. ¿Cuál es la estrategia ventilatoria más adecuada?',
+        opts:[
+          {t:'FR alta (30/min) + VT alto + IE 1:1 para eliminar el CO₂ retenido lo más rápido posible',ok:false,fb:'Esta estrategia es peligrosa en asma. FR alta + IE 1:1 en broncoespasmo = hiperinsuflación dinámica (air trapping) → aumento de presiones → barotrauma → neumotórax → colapso cardiovascular. El asma necesita tiempo espiratorio prolongado para vaciar los alvéolos obstruidos.'},
+          {t:'FR baja (10–14/min) + VT 6–8 mL/kg + relación IE 1:3–1:4 + hipercapnia permisiva',ok:true,fb:'Correcto. Estrategia "descanso del pulmón" en asma: FR baja para dar tiempo espiratorio adecuado, VT conservador (6-8 mL/kg peso ideal), IE invertida 1:3–1:4 (más tiempo espiratorio), aceptar PaCO₂ elevada (hipercapnia permisiva hasta 60-80 mmHg si pH > 7.20). El objetivo es evitar barotrauma, no normalizar el CO₂.'},
+          {t:'CPAP sin intubación — en asma es mejor evitar el ventilador mecánico invasivo',ok:false,fb:'El CPAP (VNI) puede intentarse en fases más tempranas como puente. Pero Valentina ya está intubada (GCS 13, falla refractaria) — no es momento de retirar la vía aérea definitiva. Además, en broncoespasmo severo, el CPAP sin intubación tiene riesgo de falla y puede retrasar el manejo definitivo.'},
+          {t:'Parámetros estándar: FR 20/min, VT 10 mL/kg, IE 1:2, FiO₂ 100%',ok:false,fb:'VT de 10 mL/kg es excesivo en pulmones enfermos (objetivo 6–8 mL/kg). IE 1:2 puede ser insuficiente en asma donde se necesita 1:3–1:4. FiO₂ 100% no es necesaria con SpO₂ 96% — titular al mínimo necesario para SpO₂ 94–98%.'},
+        ],
+        key:'Ventilación en asma/broncoespasmo: FR 10-14/min · VT 6-8 mL/kg peso ideal · IE 1:3 a 1:4 · PEEP baja (3-5 cmH₂O) · Hipercapnia permisiva (pH > 7.20) · FiO₂ mínima para SpO₂ 94-98%. Monitorear presión plateau (< 30 cmH₂O) y auto-PEEP.'
+      },
+      {
+        label:'Paso 6 — Monitoreo y alarmas',
+        q:'¿Cuál de los siguientes hallazgos en el ventilador debe alertarte de complicación INMEDIATA en Valentina?',
+        opts:[
+          {t:'PaCO₂ 65 mmHg con pH 7.28 — hipercapnia moderada en paciente asmática intubada',ok:false,fb:'Esta es hipercapnia permisiva aceptable en asma. Con pH > 7.20 y PaCO₂ 65 mmHg, la estrategia es correcta. No requiere acción inmediata — el objetivo es permitir que los broncodilatadores actúen mientras se protege el pulmón.'},
+          {t:'Aumento súbito de la presión peak + desaturación + hipotensión + murmullo vesicular asimétrico',ok:true,fb:'Correcto. Esta tríada (↑ presión pico + ↓ SpO₂ + ↓ PA + asimetría auscultación) = NEUMOTÓRAX A TENSIÓN hasta demostrar lo contrario. En asma con ventilación mecánica, el riesgo de barotrauma es alto. Requiere descompresión inmediata con aguja (2° espacio intercostal, línea medioclavicular) sin esperar radiografía.'},
+          {t:'SpO₂ 97% con FiO₂ 60% — la saturación está por encima de la meta',ok:false,fb:'SpO₂ 97% con FiO₂ 60% es una buena respuesta. La acción es titular la FiO₂ hacia abajo para alcanzar SpO₂ 94–98% con el menor FiO₂ posible. No es una alarma de complicación inmediata.'},
+          {t:'FR del ventilador 12/min con FR espontánea del paciente de 0 — está bien sedada',ok:false,fb:'FR espontánea 0 con sedación adecuada es esperable y aceptable en ventilación controlada. No es una alarma de complicación — al contrario, reduce el trabajo respiratorio y permite el descanso muscular necesario.'},
+        ],
+        key:'Alarmas de complicación inmediata en VM: ↑ súbito de presión pico + desaturación + hipotensión + asimetría → Neumotórax a tensión. Descomprimir con aguja SIN esperar radiografía. DOPE: Desplazamiento del TET · Obstrucción · Neumotórax · Falla del Equipo.'
+      }
+    ]
+  }
+];
+
+// ── UTILIDADES ─────────────────────────────────────────────────────────────
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function startTimer(){timerInt=setInterval(()=>{timerSec++;document.getElementById('timer').textContent=fmt(timerSec);},1000);}
+function addLog(msg,cls=''){
+  const l=document.getElementById('log-list');
+  const d=document.createElement('div');
+  d.className='log-entry'+(cls?' '+cls:'');
+  d.textContent=fmt(timerSec)+' — '+msg;
+  l.appendChild(d);l.scrollTop=l.scrollHeight;
+}
+
+// ── ONDAS ──────────────────────────────────────────────────────────────────
+function drawWaves(){
+  animFrames.forEach(f=>cancelAnimationFrame(f));
+  animFrames=[];
+  const ph=PHASES[phase];
+
+  function animCanvas(canvasId,color,type,offset){
+    const c=document.getElementById(canvasId);
+    if(!c)return;
+    let t=offset||0;
+    function frame(){
+      const W=c.offsetWidth||350,H=50;
+      c.width=W;
+      const ctx=c.getContext('2d');
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle='#1a2a1a';ctx.lineWidth=0.5;
+      for(let x=0;x<W;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+      for(let y=0;y<H;y+=15){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+      ctx.strokeStyle=color;ctx.lineWidth=1.8;ctx.beginPath();
+      t=(t+1.2)%W;
+      for(let x=0;x<W;x++){
+        const xm=(x+t)%W;const xn=xm/W;
+        let y=H/2;
+        if(type==='rapid'){
+          const b=(xn*5)%1;
+          if(b<.15)y=H/2-12*Math.sin(b*Math.PI/.15);
+          else if(b<.35)y=H/2-8*Math.sin((b-.15)*Math.PI/.20);
+          else y=H/2+(Math.random()*.6-.3);
+        } else if(type==='labored'){
+          const b=(xn*3.5)%1;
+          if(b<.20)y=H/2-18*Math.sin(b*Math.PI/.20);
+          else if(b<.25)y=H/2+4;
+          else if(b<.45)y=H/2-10*Math.sin((b-.25)*Math.PI/.20);
+          else y=H/2+(Math.random()*.8-.4);
+        } else if(type==='mechanical'){
+          const b=(xn*3.2)%1;
+          if(b<.15)y=H/2-14;
+          else if(b<.30)y=H/2-14;
+          else if(b<.32)y=H/2;
+          else y=H/2+(Math.random()*.4-.2);
+        } else if(type==='low'){
+          const b=(xn*5)%1;
+          y=H/2-8*Math.sin(b*2*Math.PI)+(Math.random()*.8-.4);
+        } else if(type==='very_low'){
+          const b=(xn*4)%1;
+          y=H/2-5*Math.sin(b*2*Math.PI)+(Math.random()*1.2-.6);
+        } else if(type==='recovering'){
+          const b=(xn*4)%1;
+          y=H/2-12*Math.sin(b*2*Math.PI)+(Math.random()*.4-.2);
+        }
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      const af=requestAnimationFrame(frame);
+      animFrames.push(af);
+    }
+    frame();
+  }
+
+  const ph2=PHASES[phase];
+  animCanvas('resp-wave',ph2.monColor,ph2.respType,0);
+  animCanvas('spo2-wave','#60a5fa',ph2.spo2Type,100);
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function renderNav(){
+  document.getElementById('phase-nav').innerHTML=PHASES.map((p,i)=>`
+    <div class="pnav-btn ${i===phase?'active':i<phase?'done':''}">
+      <span class="pnav-num">${i<phase?'✓':i+1}</span>
+      ${p.label}<br><span style="font-size:10px;opacity:.8">${p.sub}</span>
+    </div>`).join('');
+}
+
+function renderVitals(){
+  const ph=PHASES[phase];
+  document.getElementById('vitals-grid').innerHTML=ph.vitals.map(v=>`
+    <div class="vcard">
+      <div class="vlabel">${v.l}</div>
+      <div class="vval ${v.cls}">${v.v}</div>
+      <div class="vsub ${v.cls}">${v.s}</div>
+    </div>`).join('');
+  const ml=document.getElementById('mon-label');
+  ml.textContent=ph.monLabel;ml.style.color=ph.monColor;
+}
+
+function renderPhase(){
+  answered=false;
+  renderNav();renderVitals();drawWaves();renderQuestion();
+}
+
+function renderQuestion(){
+  const ph=PHASES[phase];
+  const q=ph.questions[qStep];
+  const letters=['A','B','C','D'];
+  document.getElementById('main-content').innerHTML=`
+    <div class="card">
+      <div class="card-header">
+        <div class="avatar" style="background:${ph.avatarBg}">${ph.avatar}</div>
+        <div>
+          <div class="case-title">Valentina · 4 años · 18 kg · ${fmt(timerSec)}</div>
+          <div class="case-sub">Urgencias pediátricas · Crisis asmática severa</div>
+        </div>
+      </div>
+      <div class="case-text">${ph.scenario}</div>
+      <div class="alert-box ${ph.alert.cls}">${ph.alert.text}</div>
+    </div>
+    <div class="card">
+      <div class="q-label">${q.label}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="opts" id="opts">
+        ${q.opts.map((o,i)=>`
+          <div class="opt" id="opt${i}" onclick="handleOpt(${i})">
+            <span class="opt-letter">${letters[i]}</span>
+            <span>${o.t}</span>
+          </div>`).join('')}
+      </div>
+      <div id="fb-area"></div>
+      <div id="next-area"></div>
+    </div>
+  `;
+}
+
+function handleOpt(idx){
+  if(answered)return;
+  answered=true;
+  const ph=PHASES[phase];
+  const q=ph.questions[qStep];
+  const chosen=q.opts[idx];
+  scores.total++;
+  if(chosen.ok){scores.correct++;phaseScores[phase]++;}
+  document.querySelectorAll('.opt').forEach((el,i)=>{
+    el.classList.add('disabled');
+    if(q.opts[i].ok)el.classList.add('correct');
+  });
+  document.getElementById('opt'+idx).classList.add(chosen.ok?'correct':'incorrect');
+  addLog((chosen.ok?'✓ ':'✗ ')+chosen.t.substring(0,55)+'…',chosen.ok?'good':'bad');
+
+  document.getElementById('fb-area').innerHTML=`
+    <div class="fb ${chosen.ok?'fb-ok':'fb-err'}"><strong>${chosen.ok?'Correcto':'No es la mejor opción'}:</strong> ${chosen.fb}</div>
+    <div class="key-box"><strong>Concepto clave:</strong>${q.key}</div>
+  `;
+
+  const isLastQ=qStep>=ph.questions.length-1;
+  const isLastPh=phase>=PHASES.length-1;
+  const na=document.getElementById('next-area');
+  if(!isLastQ){
+    const b=document.createElement('button');b.className='btn-primary';
+    b.textContent='Siguiente pregunta →';
+    b.onclick=()=>{qStep++;answered=false;renderQuestion();window.scrollTo({top:0,behavior:'smooth'});};
+    na.appendChild(b);
+  } else if(!isLastPh){
+    const b=document.createElement('button');b.className='btn-primary';
+    b.textContent='Continuar a '+PHASES[phase+1].label+' — '+PHASES[phase+1].sub+' →';
+    b.onclick=()=>{phase++;qStep=0;answered=false;renderPhase();window.scrollTo({top:0,behavior:'smooth'});};
+    na.appendChild(b);
+  } else {
+    const b=document.createElement('button');b.className='btn-primary';
+    b.textContent='Ver resultado final →';
+    b.onclick=showFinal;
+    na.appendChild(b);
+  }
+}
+
+function showFinal(){
+  if(timerInt)clearInterval(timerInt);
+  animFrames.forEach(f=>cancelAnimationFrame(f));
+  const pct=Math.round(scores.correct/scores.total*100);
+  const col=pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
+  const msg=scores.correct===scores.total?'Dominio excelente de falla ventilatoria pediátrica.':pct>=70?'Muy buen desempeño. Repasa los puntos marcados.':'Repasa el algoritmo de falla ventilatoria y ventilación mecánica básica.';
+
+  document.getElementById('phase-nav').innerHTML='';
+  document.getElementById('vitals-grid').innerHTML='';
+  document.getElementById('mon-label').textContent='';
+  ['resp-wave','spo2-wave'].forEach(id=>{const c=document.getElementById(id);if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}});
+  document.getElementById('log-list').parentElement.style.display='none';
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="final-card">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Resultado — Falla Ventilatoria Pediátrica</div>
+      <div class="final-score" style="color:${col}">${scores.correct}/${scores.total}</div>
+      <div style="font-size:14px;color:${col};font-weight:500;margin-bottom:16px">${pct}% — ${msg} · Tiempo: ${fmt(timerSec)}</div>
+      <div class="final-grid">
+        <div class="final-item"><div class="final-val">${phaseScores[0]}/2</div><div class="final-lbl">Fase 1 — Reconocimiento</div></div>
+        <div class="final-item"><div class="final-val">${phaseScores[1]}/2</div><div class="final-lbl">Fase 2 — Manejo inicial</div></div>
+        <div class="final-item"><div class="final-val">${phaseScores[2]}/2</div><div class="final-lbl">Fase 3 — Ventilación mecánica</div></div>
+      </div>
+      <div class="summary">
+        <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Conceptos evaluados</div>
+        <div class="summary-item">✓ SpO₂ normal en Bogotá (2.640 m): ≥ 88–90% en niños > 1 año · O₂ suplementario ante hipoxemia o dificultad respiratoria, umbral ≤ 85% (Ucrós et al., AIEPI)</div>
+        <div class="summary-item">✓ Signos de falla ventilatoria inminente: quejido · bradipnea · silencio auscultatorio · alteración neurológica</div>
+        <div class="summary-item">✓ Indicaciones de intubación: GCS ≤ 8 · falla refractaria · SpO₂ < 85% con O₂ máximo</div>
+        <div class="summary-item">✓ Técnica de VPP con BVM: sello C-E · FR 12-20/min · VT = elevación torácica visible</div>
+        <div class="summary-item">✓ Ventilación en asma: FR baja · IE 1:3-1:4 · hipercapnia permisiva · evitar barotrauma</div>
+        <div class="summary-item">✓ Alarmas en VM: ↑ presión pico + desaturación + hipotensión = neumotórax a tensión (mnemotecnia DOPE)</div>
+      </div>
+      <button class="btn-secondary" onclick="restart()">Reiniciar simulación</button>
+    </div>
+  `;
+}
+
+function restart(){
+  phase=0;qStep=0;scores={correct:0,total:0};phaseScores=[0,0,0];
+  answered=false;timerSec=0;wavePhase=0;
+  document.getElementById('timer').textContent='00:00';
+  document.getElementById('log-list').innerHTML='<div class="log-entry">00:00 — Caso iniciado. Paciente en urgencias pediátricas.</div>';
+  document.getElementById('log-list').parentElement.style.display='';
+  if(timerInt)clearInterval(timerInt);
+  startTimer();renderPhase();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+startTimer();
+renderPhase();
+</script>
+</body>
+</html>

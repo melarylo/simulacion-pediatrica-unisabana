@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Punción IO y Lumbar — Pediatría</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f3f4f6;color:#111827;min-height:100vh;}
+.top-bar{background:#1e3a5f;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.top-title{font-size:14px;font-weight:500;}
+.top-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.badge{background:#dbeafe;color:#1e40af;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;}
+.timer{font-family:monospace;font-size:22px;font-weight:600;color:#fbbf24;text-align:right;}
+.timer-lbl{font-size:10px;opacity:.6;text-align:right;}
+
+.phase-nav{display:flex;gap:0;margin-bottom:14px;border-radius:10px;overflow:hidden;border:.5px solid #e5e7eb;}
+.pnav-btn{flex:1;padding:10px 8px;text-align:center;font-size:11px;font-weight:500;background:#f9fafb;color:#6b7280;border-right:.5px solid #e5e7eb;}
+.pnav-btn:last-child{border-right:none;}
+.pnav-btn.active{background:#1e3a5f;color:#fff;}
+.pnav-btn.done{background:#d1fae5;color:#065f46;}
+.pnav-num{font-size:14px;font-weight:700;display:block;margin-bottom:2px;}
+
+.container{max-width:780px;margin:0 auto;padding:20px 16px;}
+
+/* Anatomía visual */
+.anatomy-wrap{background:#0f0f0f;border-radius:12px;padding:14px;margin-bottom:14px;}
+.anatomy-title{font-size:11px;font-family:monospace;color:#60a5fa;margin-bottom:8px;}
+.anatomy-svg{display:block;width:100%;height:160px;}
+
+/* Vitals */
+.vitals{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.vcard{background:#fff;border-radius:8px;padding:8px 10px;border:.5px solid #e5e7eb;}
+.vlabel{font-size:10px;color:#6b7280;margin-bottom:2px;}
+.vval{font-size:18px;font-weight:600;}
+.vsub{font-size:10px;margin-top:2px;}
+.v-ok{color:#059669;} .v-warn{color:#d97706;} .v-danger{color:#dc2626;} .v-pending{color:#9ca3af;}
+
+.card{background:#fff;border:.5px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.case-title{font-size:14px;font-weight:600;}
+.case-sub{font-size:11px;color:#6b7280;}
+.case-text{font-size:13px;line-height:1.65;color:#374151;}
+.alert-box{border-radius:8px;padding:9px 13px;margin-top:10px;font-size:12px;line-height:1.6;}
+.alert-warn{background:#fef3c7;border:.5px solid #fcd34d;color:#92400e;}
+.alert-info{background:#dbeafe;border:.5px solid #93c5fd;color:#1e40af;}
+.alert-ok{background:#d1fae5;border:.5px solid #6ee7b7;color:#065f46;}
+
+/* Steps */
+.steps-visual{display:flex;gap:0;margin:12px 0;overflow:hidden;border-radius:8px;}
+.step-seg{flex:1;padding:8px 6px;text-align:center;font-size:10px;font-weight:500;line-height:1.4;}
+
+.q-label{font-size:11px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.q-text{font-size:14px;font-weight:500;margin-bottom:12px;line-height:1.5;}
+.opts{display:flex;flex-direction:column;gap:7px;}
+.opt{background:#fff;border:.5px solid #d1d5db;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:13px;line-height:1.45;display:flex;align-items:flex-start;gap:10px;transition:background .1s;}
+.opt:hover:not(.disabled){background:#f9fafb;}
+.opt.disabled{opacity:.45;cursor:not-allowed;}
+.opt.correct{border-color:#6ee7b7;background:#d1fae5;color:#065f46;}
+.opt.incorrect{border-color:#fca5a5;background:#fee2e2;color:#991b1b;}
+.opt-letter{font-size:11px;font-weight:700;min-width:18px;color:#6b7280;margin-top:1px;flex-shrink:0;}
+.opt.correct .opt-letter{color:#065f46;}
+.opt.incorrect .opt-letter{color:#991b1b;}
+
+.fb{border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.6;margin-top:12px;border:.5px solid;}
+.fb-ok{background:#d1fae5;color:#065f46;border-color:#6ee7b7;}
+.fb-err{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
+.key-box{background:#eff6ff;border:.5px solid #93c5fd;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:12px;color:#1e40af;line-height:1.6;}
+.key-box strong{display:block;margin-bottom:4px;}
+
+.btn-primary{background:#1e3a5f;color:#fff;border:none;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;width:100%;margin-top:10px;}
+.btn-primary:hover{background:#1d4ed8;}
+.btn-secondary{background:#fff;color:#374151;border:.5px solid #d1d5db;padding:11px 24px;border-radius:8px;font-size:13px;cursor:pointer;width:100%;margin-top:8px;}
+
+.log-wrap{background:#fff;border:.5px solid #e5e7eb;border-radius:10px;padding:10px 14px;margin-bottom:14px;}
+.log-title{font-size:11px;color:#6b7280;font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
+.log-list{max-height:80px;overflow-y:auto;font-family:monospace;font-size:11px;}
+.log-entry{padding:2px 0;border-bottom:.5px solid #f3f4f6;color:#6b7280;}
+.log-entry.good{color:#059669;} .log-entry.bad{color:#dc2626;}
+
+.final-card{background:#fff;border:.5px solid #e5e7eb;border-radius:12px;padding:28px;text-align:center;}
+.final-score{font-size:56px;font-weight:700;margin:12px 0 6px;}
+.final-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0;}
+.final-item{background:#f9fafb;border-radius:8px;padding:12px;}
+.final-val{font-size:20px;font-weight:700;color:#1e3a5f;}
+.final-lbl{font-size:11px;color:#6b7280;margin-top:2px;}
+.summary{background:#f9fafb;border-radius:10px;padding:14px 16px;text-align:left;margin-bottom:16px;}
+.summary-item{font-size:12px;padding:4px 0;border-bottom:.5px solid #e5e7eb;}
+.summary-item:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-title">Simulador Punción IO y Punción Lumbar &nbsp;<span class="badge">Pediatría</span></div>
+    <div class="top-sub">Hospital Simulado · Universidad de La Sabana</div>
+  </div>
+  <div>
+    <div class="timer" id="timer">00:00</div>
+    <div class="timer-lbl">tiempo de caso</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="phase-nav" id="phase-nav"></div>
+  <div class="vitals" id="vitals-grid"></div>
+
+  <!-- Diagrama anatómico -->
+  <div class="anatomy-wrap">
+    <div class="anatomy-title" id="anat-title">REFERENCIA ANATÓMICA — SITIO DE PUNCIÓN</div>
+    <svg class="anatomy-svg" id="anat-svg" viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div id="main-content"></div>
+
+  <div class="log-wrap">
+    <div class="log-title">Registro de acciones</div>
+    <div class="log-list" id="log-list">
+      <div class="log-entry">00:00 — Caso iniciado. Paciente crítico en urgencias.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let phase=0, qStep=0, answered=false;
+let scores={correct:0,total:0};
+let phaseScores=[0,0];
+let timerSec=0, timerInt=null;
+
+const PHASES=[
+  {
+    label:'Fase 1', sub:'Punción IO',
+    avatarBg:'#fee2e2', avatar:'👶',
+    vitals:[
+      {l:'FC',v:'188',cls:'v-danger',s:'lpm — Taquicardia'},
+      {l:'SpO₂',v:'78%',cls:'v-danger',s:'↓↓ Crítico'},
+      {l:'PA',v:'62/38',cls:'v-danger',s:'mmHg — Shock'},
+      {l:'Acceso IV',v:'Ninguno',cls:'v-danger',s:'2 intentos fallidos'},
+    ],
+    scenario:`<strong>Mateo, 14 meses, 11 kg.</strong> En PCR. Dos intentos de acceso venoso periférico fallidos en 90 segundos. FC 188 lpm, SpO₂ 78%, PA 62/38 mmHg. El equipo necesita acceso para epinefrina de inmediato.`,
+    alert:{cls:'alert-warn',text:'PALS 2025: Si no se logra acceso venoso en 2 intentos o 90 segundos en paciente crítico → punción intraósea. No es el último recurso, es el segundo paso.'},
+    anat:'io',
+    steps:['Identificar sitio','Limpiar y anestesiar','Insertar aguja IO','Confirmar posición','Administrar fármaco'],
+    stepColors:['#1e3a5f','#1d4ed8','#2563eb','#059669','#065f46'],
+    questions:[
+      {
+        label:'Caso IO — Indicación y sitio',
+        q:'¿Cuál es la indicación CORRECTA de punción intraósea en Mateo y el sitio de elección en < 6 años?',
+        opts:[
+          {t:'IO cuando no hay ninguna vena visible — es el último recurso después de 5+ intentos',ok:false,fb:'PALS 2025 actualiza este concepto: la IO NO es el último recurso. Es el segundo paso después de 2 intentos fallidos o 90 segundos sin acceso en paciente crítico. En urgencias vitales (PCR, shock) no hay tiempo para múltiples intentos fallidos.'},
+          {t:'IO indicada después de 2 intentos fallidos o 90 segundos sin acceso en paciente crítico. Sitio: tibia proximal — 1–2 cm por debajo de la tuberosidad tibial, cara anteromedial',ok:true,fb:'Correcto. PALS 2025: IO indicada cuando no se logra acceso IV en 2 intentos o 90 segundos en paciente crítico. Sitio preferido en < 6 años: tibia proximal, 1–2 cm distal a la tuberosidad tibial, en la cara anteromedial plana. Alternativa: fémur distal o esternón (> 3 años con dispositivo específico).'},
+          {t:'IO solo en menores de 3 años — en niños mayores la médula es grasa y no permite infusión',ok:false,fb:'La médula ósea roja (hematopoyética) persiste en la tibia y en el fémur hasta los 5–6 años, y en el esternón durante toda la vida. La IO puede usarse a cualquier edad pediátrica e incluso en adultos. La médula grasa no impide la infusión.'},
+          {t:'IO en el calcáneo — sitio más accesible y con menor riesgo de complicaciones',ok:false,fb:'El calcáneo NO es un sitio recomendado para IO en pediatría. Los sitios estándar son: tibia proximal (primera elección < 6 años), fémur distal, y esternón (> 3 años con dispositivo EZ-IO o BIG). El calcáneo tiene escasa vascularidad medular y alta tasa de fallo.'},
+        ],
+        key:'IO PALS 2025: 2 intentos fallidos o 90 seg sin acceso → IO inmediata. Sitio < 6 años: tibia proximal 1-2 cm distal a tuberosidad tibial, cara anteromedial. TODOS los medicamentos IV pueden administrarse por vía IO: epinefrina, amiodarona, líquidos, sangre.'
+      },
+      {
+        label:'Técnica y confirmación IO',
+        q:'Insertaste la aguja IO en la tibia proximal de Mateo. ¿Cómo confirmas la posición correcta ANTES de administrar epinefrina?',
+        opts:[
+          {t:'La aguja queda firme sin soporte externo + se puede aspirar contenido de médula ósea o infusión fluye libre sin extravasación',ok:true,fb:'Correcto. Confirmación de posición IO correcta: (1) La aguja se mantiene erecta sin soporte (implantada en hueso cortical). (2) Sensación de "clic" al atravesar la cortical. (3) Aspiración de médula ósea (no siempre ocurre). (4) Flujo libre de solución salina sin extravasación subcutánea. Verificar ausencia de extravasación en tejido blando circundante.'},
+          {t:'Solo se necesita la radiografía de tibia para confirmar la posición antes de usar la IO',ok:false,fb:'No. La confirmación IO es CLÍNICA — no se espera radiografía en una emergencia. Los 4 criterios clínicos (aguja firme + clic + aspiración + flujo libre) son suficientes para iniciar la infusión. La Rx puede hacerse después para confirmar posición definitiva.'},
+          {t:'Si el paciente grita de dolor al insertar la aguja confirma que está en posición correcta',ok:false,fb:'El dolor durante la inserción es un criterio equivocado. En un paciente en PCR o shock profundo no hay respuesta al dolor. La confirmación es mecánica (aguja firme) y funcional (flujo libre sin extravasación), no basada en la reacción del paciente.'},
+          {t:'Basta con ver que la aguja entró en el sitio correcto — no se necesita confirmación adicional',ok:false,fb:'Siempre se confirma la posición antes de infundir medicamentos. El riesgo de extravasación a tejido blando (con necrosis posterior) es real si la aguja no penetró la cortical correctamente. Verificar siempre los 4 criterios clínicos antes de usar la IO.'},
+        ],
+        key:'Confirmación IO: (1) Aguja firme sin soporte externo (2) Sensación de "clic" al atravesar cortical (3) Aspiración de médula (no siempre) (4) Flujo libre sin extravasación. Complicación grave: extravasación → síndrome compartimental → amputación. Siempre verificar antes de infundir.'
+      },
+      {
+        label:'Administración de medicamentos por IO',
+        q:'La IO está confirmada. ¿Cuál es la técnica correcta para administrar epinefrina 0.01 mg/kg por esta vía?',
+        opts:[
+          {t:'Epinefrina diluida + flush de 5–10 mL de SSN a presión después de cada medicamento — la IO requiere flujo a presión para alcanzar la circulación central',ok:true,fb:'Correcto. Por vía IO se administra igual que por IV, pero requiere flush de 5–10 mL de SSN a presión (con jeringa de 10 mL o bomba de presión) después de cada medicamento para garantizar el transporte desde la médula hasta la circulación central. Sin flush adecuado el medicamento puede quedar en la médula sin llegar al torrente.'},
+          {t:'Epinefrina sin diluir en bolo rápido — la IO absorbe mejor los medicamentos concentrados',ok:false,fb:'Los medicamentos por IO se administran igual que por IV: en la dilución estándar correspondiente a la vía IV. La concentración no es diferente. Lo que SÍ es diferente es que requiere flush de presión después de cada medicamento.'},
+          {t:'Goteo lento — la IO no puede recibir infusiones a velocidad normal, solo en micro-goteo',ok:false,fb:'La IO puede recibir infusiones a velocidades similares a IV para medicamentos de urgencia. Para fluidos de volumen (bolo de resucitación) se usa presión manual o bolsa de presión porque el flujo gravitacional es más lento que en IV. Pero los medicamentos de emergencia se dan en bolo.'},
+          {t:'No se pueden dar medicamentos vasopresores por IO — solo líquidos',ok:false,fb:'Falso. Por IO se pueden administrar TODOS los medicamentos que se darían por IV: epinefrina, adenosina, amiodarona, atropina, glucosa, antibióticos, sedación, y también líquidos. No hay restricción de tipo de medicamento.'},
+        ],
+        key:'IO = IV en términos de medicamentos: mismas dosis, mismas diluciones. Diferencia clave: siempre flush de 5-10 mL SSN a PRESIÓN después de cada medicamento. Para bolos de líquidos: usar bolsa de presión o empuje manual. Remover IO después de 24 horas o al obtener acceso IV definitivo.'
+      }
+    ]
+  },
+  {
+    label:'Fase 2', sub:'Punción Lumbar',
+    avatarBg:'#dbeafe', avatar:'👧',
+    vitals:[
+      {l:'FC',v:'128',cls:'v-warn',s:'lpm — Febril'},
+      {l:'T°',v:'39.4°C',cls:'v-danger',s:'Fiebre alta'},
+      {l:'Glasgow',v:'15/15',cls:'v-ok',s:'Alerta y orientada'},
+      {l:'Rigidez',v:'Sí',cls:'v-danger',s:'Nuca + Kernig'},
+    ],
+    scenario:`<strong>Valentina, 18 meses, 10 kg.</strong> Fiebre de 12 horas, irritabilidad, rigidez de nuca, signo de Kernig positivo. Glasgow 15/15. Sin signos de hipertensión endocraneana. El médico decide realizar punción lumbar para descartar meningitis bacteriana.`,
+    alert:{cls:'alert-info',text:'Antes de la punción lumbar: descartar hipertensión endocraneana. Con Glasgow 15/15, sin papiledema y sin Cushing, la PL puede realizarse sin TAC previo.'},
+    anat:'lp',
+    steps:['Verificar contraindicaciones','Posicionar al paciente','Identificar L3-L4','Insertar aguja','Recolectar LCR'],
+    stepColors:['#7c3aed','#6d28d9','#5b21b6','#4c1d95','#2e1065'],
+    questions:[
+      {
+        label:'Contraindicaciones de punción lumbar',
+        q:'¿Cuál de las siguientes es una CONTRAINDICACIÓN ABSOLUTA para realizar la punción lumbar en Valentina?',
+        opts:[
+          {t:'Fiebre mayor de 39°C con sospecha de meningitis bacteriana',ok:false,fb:'La fiebre y la sospecha de meningitis son la INDICACIÓN de la punción lumbar, no una contraindicación. De hecho, en meningitis bacteriana la PL es urgente para identificar el germen y orientar el antibiótico.'},
+          {t:'Signos de hipertensión endocraneana: papiledema, síndrome de Cushing neurológico o Glasgow < 8',ok:true,fb:'Correcto. La hipertensión endocraneana es la contraindicación más importante de la PL. Si se realiza con HTE, el cono de presión puede producir herniación transtentorial con muerte. Buscar: papiledema en fondo de ojo, tríada de Cushing (HTA + bradicardia + respiración irregular), Glasgow < 8, asimetría pupilar. Si hay sospecha de HTE → TAC primero.'},
+          {t:'Plaquetas de 95,000/mm³ — todo valor menor a 100,000 es contraindicación absoluta',ok:false,fb:'Plaquetas 95,000/mm³ es un valor con precaución pero NO contraindicación absoluta. El umbral generalmente aceptado para PL es plaquetas > 50,000/mm³ con coagulación normal. Entre 50,000 y 100,000 se evalúa el riesgo-beneficio. < 50,000 o coagulopatía activa sí son contraindicaciones relativas importantes.'},
+          {t:'Infección cutánea en el sitio de punción — contraindicación RELATIVA: buscar un nivel intervertebral diferente o postergar hasta que sea seguro',ok:false,fb:'La infección cutánea en el sitio de punción es una contraindicación RELATIVA, no absoluta. No se ignora — se evalúa. Si la infección está exactamente sobre el sitio planificado, puede intentarse un nivel diferente (L4-L5 en lugar de L3-L4) o postergarse si el estado clínico lo permite. Realizarla sobre piel infectada puede arrastrar bacterias al espacio subaracnoideo causando meningitis iatrogénica. En este caso Valentina no tiene infección cutánea — la contraindicación absoluta presente es la HTE.'},
+        ],
+        key:'Contraindicaciones ABSOLUTAS de PL: Hipertensión endocraneana · Herniación cerebral en curso · Inestabilidad hemodinámica severa. Contraindicaciones RELATIVAS (evaluar riesgo-beneficio): infección cutánea en el sitio (buscar otro nivel o postergar) · plaquetas < 50,000 · coagulopatía activa · antibiótico previo (no cancela la PL, solo reduce rendimiento del cultivo). Siempre buscar papiledema y tríada de Cushing antes de proceder.'
+      },
+      {
+        label:'Posición y técnica de PL',
+        q:'Valentina está lista para la punción lumbar. ¿Cuál es la posición y el espacio intervertebral CORRECTOS?',
+        opts:[
+          {t:'Decúbito lateral en posición fetal (rodillas al pecho, cuello flexionado) o sentada con flexión máxima de columna. Espacio L3-L4 o L4-L5 (por debajo del cono medular en niños > 1 año)',ok:true,fb:'Correcto. Dos posiciones válidas: decúbito lateral en posición fetal (más común, mejor control de presión) o sentada con flexión máxima (más fácil para identificar línea media). El espacio L3-L4 o L4-L5 es seguro porque el cono medular termina en L1-L2 en niños > 1 año. Referencia anatómica: línea imaginaria entre las crestas ilíacas → nivel L4.'},
+          {t:'Decúbito prono con almohada bajo el abdomen — extiende los espacios intervertebrales',ok:false,fb:'El decúbito prono no es la posición para PL. Impide la flexión lumbar necesaria y dificulta el acceso al espacio subaracnoideo. Las posiciones correctas son decúbito lateral en posición fetal o sentada con flexión de columna.'},
+          {t:'Espacio L1-L2 — es el más amplio y de más fácil acceso en lactantes',ok:false,fb:'L1-L2 es PELIGROSO en cualquier edad porque el cono medular puede llegar hasta L2 en lactantes y hasta L1 en niños mayores. Punzar en L1-L2 puede lesionar directamente el cono. El espacio seguro es L3-L4 o L4-L5, siempre por debajo del cono medular.'},
+          {t:'Espacio C7-T1 cervical — más accesible y con menor riesgo de lesión medular',ok:false,fb:'La punción cervical (cisternal o cervical alta) es un procedimiento de alta especialidad con riesgo elevado de lesión del tronco encefálico. No es el abordaje estándar para diagnóstico de meningitis. La vía lumbar (L3-L4 o L4-L5) es el gold standard.'},
+        ],
+        key:'PL: posición fetal (decúbito lateral) o sentada con flexión máxima. Espacio: L3-L4 o L4-L5 (línea entre crestas ilíacas = L4). Aguja: 22G para RN-lactantes, 20-22G para niños mayores. Retirar estilete antes de aspirar LCR. Recoger 3-4 tubos: bioquímica · citología · microbiología · cultivo.'
+      },
+      {
+        label:'Interpretación del LCR',
+        q:'El LCR de Valentina: aspecto turbio, presión de apertura 280 mmH₂O, leucocitos 1,200/mm³ (predominio neutrófilos), proteínas 180 mg/dL, glucosa 18 mg/dL (glucemia 95 mg/dL). ¿Cuál es el diagnóstico más probable?',
+        opts:[
+          {t:'Meningitis bacteriana — LCR turbio, neutrófilos, proteínas altas, glucosa baja (< 40% de glucemia)',ok:true,fb:'Correcto. El patrón es clásico de meningitis bacteriana: (1) Aspecto turbio (≥ 200 leucocitos/mm³). (2) Pleocitosis neutrofílica (> 1000/mm³). (3) Proteínas elevadas (> 100 mg/dL). (4) Glucosa baja: 18 mg/dL con glucemia 95 → relación LCR/sangre = 0.19 (normal > 0.6). (5) Presión de apertura elevada. → Antibiótico inmediato, no esperar cultivo.'},
+          {t:'Meningitis viral — el aspecto turbio y los neutrófilos son hallazgos normales en infección por enterovirus',ok:false,fb:'La meningitis viral típicamente muestra: LCR claro o ligeramente opalescente, pleocitosis LINFOCITARIA (no neutrofílica), proteínas levemente elevadas y glucosa NORMAL. LCR turbio + neutrófilos + glucosa muy baja + proteínas altas = meningitis bacteriana hasta demostrar lo contrario.'},
+          {t:'Hemorragia subaracnoidea — la presión elevada y el aspecto turbio indican sangrado',ok:false,fb:'La HSA produce LCR xantocrómico (amarillo), con eritrocitos uniformemente distribuidos en todos los tubos y presión elevada. No produce pleocitosis neutrofílica ni hipoglucorraquia. El LCR turbio blanquecino con neutrófilos apunta a infección, no a sangrado.'},
+          {t:'LCR normal — los valores están dentro del rango esperado para la edad',ok:false,fb:'Este LCR es marcadamente anormal: leucocitos normales en LCR < 5/mm³ (tiene 1,200), proteínas normales < 40 mg/dL (tiene 180), glucosa > 60% de glucemia (tiene 19%). Hay una emergencia infecciosa del SNC que requiere antibiótico IV inmediato.'},
+        ],
+        key:'LCR normal vs patológico: Leucocitos < 5/mm³ (RN < 20) · Proteínas 15-45 mg/dL · Glucosa > 60% de glucemia · Aspecto claro. Bacteriana: turbio + neutrófilos + proteínas ↑↑ + glucosa ↓↓. Viral: claro + linfocitos + proteínas ↑ leve + glucosa normal. HSA: xantocrómico + eritrocitos todos los tubos.'
+      }
+    ]
+  }
+];
+
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function startTimer(){timerInt=setInterval(()=>{timerSec++;document.getElementById('timer').textContent=fmt(timerSec);},1000);}
+function addLog(msg,cls=''){
+  const l=document.getElementById('log-list');
+  const d=document.createElement('div');
+  d.className='log-entry'+(cls?' '+cls:'');
+  d.textContent=fmt(timerSec)+' — '+msg;
+  l.appendChild(d);l.scrollTop=l.scrollHeight;
+}
+
+function drawAnat(){
+  const ph=PHASES[phase];
+  const svg=document.getElementById('anat-svg');
+  const title=document.getElementById('anat-title');
+  if(ph.anat==='io'){
+    title.textContent='PUNCIÓN INTRAÓSEA — TIBIA PROXIMAL (CARA ANTEROMEDIAL)';
+    svg.innerHTML=`
+      <!-- Pierna derecha vista frontal -->
+      <rect x="280" y="10" width="140" height="140" rx="70" fill="#f5d0a9" stroke="#c4956a" stroke-width="1.5"/>
+      <!-- Tibia -->
+      <rect x="320" y="30" width="60" height="110" rx="8" fill="#e8d5b7" stroke="#b8965a" stroke-width="1.5"/>
+      <!-- Tuberosidad tibial -->
+      <ellipse cx="350" cy="65" rx="18" ry="10" fill="#d4b896" stroke="#b8965a" stroke-width="1.5"/>
+      <text x="350" y="69" text-anchor="middle" font-size="8" fill="#5a3d1a" font-family="monospace">Tuberosidad</text>
+      <!-- Punto de punción -->
+      <circle cx="332" cy="90" r="8" fill="#dc2626" opacity="0.9"/>
+      <text x="332" y="93" text-anchor="middle" font-size="9" fill="white" font-weight="bold">✕</text>
+      <!-- Aguja IO -->
+      <line x1="300" y1="90" x2="333" y2="90" stroke="#60a5fa" stroke-width="3" stroke-linecap="round"/>
+      <polygon points="330,85 340,90 330,95" fill="#60a5fa"/>
+      <!-- Etiquetas -->
+      <text x="350" y="92" font-size="10" fill="#dc2626" font-family="monospace" font-weight="bold">← 1-2 cm distal</text>
+      <text x="350" y="103" font-size="9" fill="#6b7280" font-family="monospace">a la tuberosidad</text>
+      <!-- Medición -->
+      <line x1="340" y1="65" x2="340" y2="90" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3"/>
+      <text x="342" y="78" font-size="9" fill="#fbbf24" font-family="monospace">~2cm</text>
+      <!-- Leyenda derecha -->
+      <rect x="450" y="20" width="230" height="120" rx="8" fill="#111827" stroke="#1e3a5f" stroke-width="1"/>
+      <text x="465" y="38" font-size="10" fill="#60a5fa" font-family="monospace" font-weight="bold">CONFIRMACIÓN IO:</text>
+      <text x="465" y="54" font-size="9" fill="#9ca3af" font-family="monospace">① Aguja firme sin soporte externo</text>
+      <text x="465" y="68" font-size="9" fill="#9ca3af" font-family="monospace">② Sensación de "clic" cortical</text>
+      <text x="465" y="82" font-size="9" fill="#9ca3af" font-family="monospace">③ Aspiración de médula (posible)</text>
+      <text x="465" y="96" font-size="9" fill="#9ca3af" font-family="monospace">④ Flujo libre sin extravasación</text>
+      <text x="465" y="115" font-size="9" fill="#fbbf24" font-family="monospace">FLUSH: 5-10 mL SSN a presión</text>
+      <text x="465" y="129" font-size="9" fill="#fbbf24" font-family="monospace">después de cada medicamento</text>
+      <!-- Título -->
+      <text x="10" y="20" font-size="10" fill="#60a5fa" font-family="monospace">TIBIA PROXIMAL</text>
+      <text x="10" y="34" font-size="9" fill="#9ca3af" font-family="monospace">Vista anteromedial</text>
+      <text x="10" y="55" font-size="9" fill="#f3f4f6" font-family="monospace">Ángulo inserción:</text>
+      <text x="10" y="68" font-size="9" fill="#fbbf24" font-family="monospace">90° perpendicular</text>
+      <text x="10" y="82" font-size="9" fill="#fbbf24" font-family="monospace">al eje largo del hueso</text>
+      <text x="10" y="100" font-size="9" fill="#f3f4f6" font-family="monospace">Profundidad:</text>
+      <text x="10" y="113" font-size="9" fill="#fbbf24" font-family="monospace">hasta cortical opuesta</text>
+      <text x="10" y="126" font-size="9" fill="#9ca3af" font-family="monospace">(~1-2 cm en lactantes)</text>
+    `;
+  } else {
+    title.textContent='PUNCIÓN LUMBAR — ESPACIO L3-L4 · REFERENCIA ANATÓMICA';
+    svg.innerHTML=`
+      <!-- Columna lumbar lateral -->
+      <rect x="30" y="20" width="220" height="120" rx="8" fill="#111827" stroke="#1e3a5f" stroke-width="1"/>
+      <text x="45" y="38" font-size="10" fill="#60a5fa" font-family="monospace" font-weight="bold">COLUMNA LUMBAR (lateral)</text>
+      <!-- Vértebras L1-L5 -->
+      <rect x="80" y="44" width="40" height="16" rx="3" fill="#374151" stroke="#6b7280" stroke-width="1"/>
+      <text x="100" y="56" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="monospace">L1</text>
+      <rect x="80" y="63" width="40" height="16" rx="3" fill="#374151" stroke="#6b7280" stroke-width="1"/>
+      <text x="100" y="75" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="monospace">L2</text>
+      <!-- Cono medular hasta ~L1-L2 -->
+      <path d="M78 44 Q68 60 72 79" stroke="#a78bfa" stroke-width="2" fill="none" stroke-dasharray="4"/>
+      <text x="42" y="72" font-size="8" fill="#a78bfa" font-family="monospace">Cono</text>
+      <text x="42" y="82" font-size="8" fill="#a78bfa" font-family="monospace">medular</text>
+      <rect x="80" y="82" width="40" height="16" rx="3" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+      <text x="100" y="94" text-anchor="middle" font-size="8" fill="#60a5fa" font-family="monospace" font-weight="bold">L3</text>
+      <!-- Espacio L3-L4 marcado -->
+      <rect x="75" y="99" width="50" height="6" rx="2" fill="#dc2626" opacity="0.8"/>
+      <text x="130" y="105" font-size="9" fill="#dc2626" font-family="monospace" font-weight="bold">← L3-L4 ✓</text>
+      <rect x="80" y="106" width="40" height="16" rx="3" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+      <text x="100" y="118" text-anchor="middle" font-size="8" fill="#60a5fa" font-family="monospace" font-weight="bold">L4</text>
+      <!-- Espacio L4-L5 -->
+      <rect x="75" y="123" width="50" height="4" rx="2" fill="#d97706" opacity="0.7"/>
+      <text x="130" y="128" font-size="9" fill="#d97706" font-family="monospace">← L4-L5 ✓</text>
+      <!-- Aguja PL -->
+      <line x1="165" y1="102" x2="100" y2="102" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round"/>
+      <polygon points="103,97 113,102 103,107" fill="#60a5fa"/>
+
+      <!-- Referencia cresta ilíaca -->
+      <rect x="280" y="20" width="220" height="120" rx="8" fill="#111827" stroke="#1e3a5f" stroke-width="1"/>
+      <text x="295" y="38" font-size="10" fill="#60a5fa" font-family="monospace" font-weight="bold">POSICIÓN DEL PACIENTE</text>
+      <!-- Silueta fetal -->
+      <ellipse cx="420" cy="85" rx="35" ry="45" fill="#374151" stroke="#6b7280" stroke-width="1"/>
+      <!-- Cabeza -->
+      <circle cx="420" cy="45" r="18" fill="#4b5563" stroke="#6b7280" stroke-width="1"/>
+      <!-- Rodillas -->
+      <circle cx="395" cy="115" r="10" fill="#4b5563" stroke="#6b7280" stroke-width="1"/>
+      <circle cx="435" cy="118" r="10" fill="#4b5563" stroke="#6b7280" stroke-width="1"/>
+      <!-- Columna curvada -->
+      <path d="M420 62 Q430 80 430 105" stroke="#fbbf24" stroke-width="2" fill="none"/>
+      <text x="440" y="85" font-size="8" fill="#fbbf24" font-family="monospace">↑ Máxima</text>
+      <text x="440" y="95" font-size="8" fill="#fbbf24" font-family="monospace">  flexión</text>
+      <!-- Punto de punción PL -->
+      <circle cx="430" cy="95" r="6" fill="#dc2626" opacity="0.9"/>
+      <text x="430" y="99" text-anchor="middle" font-size="8" fill="white" font-weight="bold">✕</text>
+      <!-- Aguja -->
+      <line x1="465" y1="95" x2="437" y2="95" stroke="#60a5fa" stroke-width="2"/>
+      <polygon points="440,91 448,95 440,99" fill="#60a5fa"/>
+      <text x="295" y="56" font-size="9" fill="#9ca3af" font-family="monospace">Posición fetal: rodillas al pecho</text>
+      <text x="295" y="70" font-size="9" fill="#9ca3af" font-family="monospace">+ cuello flexionado</text>
+      <text x="295" y="84" font-size="9" fill="#9ca3af" font-family="monospace">O sentado con flexión lumbar</text>
+      <text x="295" y="115" font-size="9" fill="#fbbf24" font-family="monospace">Cresta ilíaca = nivel L4</text>
+      <text x="295" y="128" font-size="9" fill="#9ca3af" font-family="monospace">Punzar en L3-L4 o L4-L5</text>
+    `;
+  }
+}
+
+function renderNav(){
+  document.getElementById('phase-nav').innerHTML=PHASES.map((p,i)=>`
+    <div class="pnav-btn ${i===phase?'active':i<phase?'done':''}">
+      <span class="pnav-num">${i<phase?'✓':i+1}</span>
+      ${p.label}<br><span style="font-size:10px;opacity:.8">${p.sub}</span>
+    </div>`).join('');
+}
+
+function renderVitals(){
+  const ph=PHASES[phase];
+  document.getElementById('vitals-grid').innerHTML=ph.vitals.map(v=>`
+    <div class="vcard">
+      <div class="vlabel">${v.l}</div>
+      <div class="vval ${v.cls}">${v.v}</div>
+      <div class="vsub ${v.cls}">${v.s}</div>
+    </div>`).join('');
+}
+
+function renderPhase(){
+  answered=false;
+  renderNav();renderVitals();drawAnat();renderQuestion();
+}
+
+function renderQuestion(){
+  const ph=PHASES[phase];
+  const q=ph.questions[qStep];
+  const letters=['A','B','C','D'];
+  // Barra de pasos
+  const stepsHTML=`
+    <div class="steps-visual">
+      ${ph.steps.map((s,i)=>`
+        <div class="step-seg" style="background:${ph.stepColors[i]};color:white">
+          ${i+1}. ${s}
+        </div>`).join('')}
+    </div>
+  `;
+  document.getElementById('main-content').innerHTML=`
+    <div class="card">
+      <div class="card-header">
+        <div class="avatar" style="background:${ph.avatarBg}">${ph.avatar}</div>
+        <div>
+          <div class="case-title">${phase===0?'Mateo · 14 meses · 11 kg':'Valentina · 18 meses · 10 kg'} · ${fmt(timerSec)}</div>
+          <div class="case-sub">Urgencias pediátricas · ${phase===0?'PCR — Acceso urgente':'Sospecha meningitis bacteriana'}</div>
+        </div>
+      </div>
+      <div class="case-text">${ph.scenario}</div>
+      <div class="alert-box ${ph.alert.cls}">${ph.alert.text}</div>
+      ${stepsHTML}
+    </div>
+    <div class="card">
+      <div class="q-label">${q.label}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="opts" id="opts">
+        ${q.opts.map((o,i)=>`
+          <div class="opt" id="opt${i}" onclick="handleOpt(${i})">
+            <span class="opt-letter">${letters[i]}</span>
+            <span>${o.t}</span>
+          </div>`).join('')}
+      </div>
+      <div id="fb-area"></div>
+      <div id="next-area"></div>
+    </div>
+  `;
+}
+
+function handleOpt(idx){
+  if(answered)return;
+  answered=true;
+  const ph=PHASES[phase];
+  const q=ph.questions[qStep];
+  const chosen=q.opts[idx];
+  scores.total++;
+  if(chosen.ok){scores.correct++;phaseScores[phase]++;}
+  document.querySelectorAll('.opt').forEach((el,i)=>{
+    el.classList.add('disabled');
+    if(q.opts[i].ok)el.classList.add('correct');
+  });
+  document.getElementById('opt'+idx).classList.add(chosen.ok?'correct':'incorrect');
+  addLog((chosen.ok?'✓ ':'✗ ')+chosen.t.substring(0,55)+'…',chosen.ok?'good':'bad');
+
+  document.getElementById('fb-area').innerHTML=`
+    <div class="fb ${chosen.ok?'fb-ok':'fb-err'}"><strong>${chosen.ok?'Correcto':'No es la mejor opción'}:</strong> ${chosen.fb}</div>
+    <div class="key-box"><strong>Punto clave:</strong>${q.key}</div>
+  `;
+
+  const isLastQ=qStep>=ph.questions.length-1;
+  const isLastPh=phase>=PHASES.length-1;
+  const na=document.getElementById('next-area');
+  if(!isLastQ){
+    const b=document.createElement('button');b.className='btn-primary';
+    b.textContent='Siguiente pregunta →';
+    b.onclick=()=>{qStep++;answered=false;renderQuestion();window.scrollTo({top:0,behavior:'smooth'});};
+    na.appendChild(b);
+  } else if(!isLastPh){
+    const b=document.createElement('button');b.className='btn-primary';
+    b.textContent='Continuar a Fase 2 — Punción Lumbar →';
+    b.onclick=()=>{phase++;qStep=0;answered=false;renderPhase();window.scrollTo({top:0,behavior:'smooth'});};
+    na.appendChild(b);
+  } else {
+    const b=document.createElement('button');b.className='btn-primary';
+    b.textContent='Ver resultado final →';
+    b.onclick=showFinal;
+    na.appendChild(b);
+  }
+}
+
+function showFinal(){
+  if(timerInt)clearInterval(timerInt);
+  const pct=Math.round(scores.correct/scores.total*100);
+  const col=pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
+  const msg=scores.correct===scores.total?'Dominio excelente de procedimientos pediátricos.':pct>=70?'Muy buen desempeño. Repasa los conceptos marcados.':'Repasa las indicaciones, técnica y complicaciones de ambos procedimientos.';
+
+  document.getElementById('phase-nav').innerHTML='';
+  document.getElementById('vitals-grid').innerHTML='';
+  document.getElementById('anat-title').textContent='';
+  document.getElementById('anat-svg').innerHTML='';
+  document.getElementById('log-list').parentElement.style.display='none';
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="final-card">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Resultado — Punción IO y Punción Lumbar</div>
+      <div class="final-score" style="color:${col}">${scores.correct}/${scores.total}</div>
+      <div style="font-size:14px;color:${col};font-weight:500;margin-bottom:16px">${pct}% — ${msg} · Tiempo: ${fmt(timerSec)}</div>
+      <div class="final-grid">
+        <div class="final-item"><div class="final-val">${phaseScores[0]}/3</div><div class="final-lbl">Fase 1 — Punción IO</div></div>
+        <div class="final-item"><div class="final-val">${phaseScores[1]}/3</div><div class="final-lbl">Fase 2 — Punción Lumbar</div></div>
+      </div>
+      <div class="summary">
+        <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Conceptos evaluados</div>
+        <div class="summary-item">✓ IO: indicada en 2 intentos fallidos o 90 seg sin acceso en paciente crítico</div>
+        <div class="summary-item">✓ Sitio IO: tibia proximal, 1-2 cm distal a tuberosidad tibial, cara anteromedial</div>
+        <div class="summary-item">✓ Confirmación IO: aguja firme + clic + aspiración + flujo libre sin extravasación</div>
+        <div class="summary-item">✓ Flush IO: 5-10 mL SSN a presión después de cada medicamento</div>
+        <div class="summary-item">✓ PL contraindicada en hipertensión endocraneana — buscar papiledema y Cushing</div>
+        <div class="summary-item">✓ Espacio seguro PL: L3-L4 o L4-L5 (referencia: cresta ilíaca = L4)</div>
+        <div class="summary-item">✓ LCR bacteriano: turbio + neutrófilos + proteínas ↑↑ + glucosa ↓↓ (< 40% glucemia)</div>
+      </div>
+      <button class="btn-secondary" onclick="restart()">Reiniciar simulación</button>
+    </div>
+  `;
+}
+
+function restart(){
+  phase=0;qStep=0;scores={correct:0,total:0};phaseScores=[0,0];
+  answered=false;timerSec=0;
+  document.getElementById('timer').textContent='00:00';
+  document.getElementById('log-list').innerHTML='<div class="log-entry">00:00 — Caso iniciado. Paciente crítico en urgencias.</div>';
+  document.getElementById('log-list').parentElement.style.display='';
+  if(timerInt)clearInterval(timerInt);
+  startTimer();renderPhase();window.scrollTo({top:0,behavior:'smooth'});
+}
+
+startTimer();renderPhase();
+</script>
+</body>
+</html>

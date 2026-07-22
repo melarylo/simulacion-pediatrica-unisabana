@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encuesta de Autoconfianza — Simulación Pediátrica</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f3f4f6;color:#111827;min-height:100vh;}
+
+.top-bar{background:#1e3a5f;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.top-title{font-size:15px;font-weight:500;}
+.top-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.prog-wrap{background:rgba(255,255,255,.2);border-radius:99px;height:5px;width:160px;overflow:hidden;}
+.prog-bar{height:100%;background:#fff;border-radius:99px;transition:width .4s;}
+.prog-lbl{font-size:11px;opacity:.7;text-align:right;margin-bottom:4px;}
+
+.container{max-width:680px;margin:0 auto;padding:24px 16px;}
+
+/* Intro */
+.intro-card{background:#fff;border-radius:12px;padding:28px;margin-bottom:20px;border:.5px solid #e5e7eb;}
+.intro-card h2{font-size:20px;font-weight:600;color:#1e3a5f;margin-bottom:8px;}
+.intro-card p{font-size:14px;color:#374151;line-height:1.65;margin-bottom:6px;}
+.intro-note{background:#dbeafe;border:.5px solid #93c5fd;border-radius:8px;padding:10px 14px;font-size:13px;color:#1e40af;margin-top:12px;}
+
+/* ID fields */
+.id-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.id-grid label{font-size:12px;font-weight:500;color:#6b7280;margin-bottom:4px;display:block;}
+.id-grid input,.id-grid select{width:100%;padding:8px 12px;border:.5px solid #d1d5db;border-radius:8px;font-size:14px;font-family:system-ui;}
+.id-grid input:focus,.id-grid select:focus{outline:none;border-color:#3b82f6;}
+
+/* Escala de referencia */
+.scale-ref{background:#f9fafb;border:.5px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:16px;}
+.scale-ref-title{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
+.scale-labels{display:flex;gap:0;align-items:stretch;}
+.scale-lbl{flex:1;text-align:center;padding:8px 4px;font-size:11px;border-radius:6px;font-weight:500;line-height:1.3;}
+.s1{background:#fee2e2;color:#991b1b;}
+.s2{background:#fef3c7;color:#92400e;}
+.s3{background:#fef9c3;color:#854d0e;}
+.s4{background:#dcfce7;color:#166534;}
+.s5{background:#d1fae5;color:#065f46;}
+
+/* Ítem */
+.item-card{background:#fff;border-radius:10px;padding:18px 20px;margin-bottom:12px;border:.5px solid #e5e7eb;}
+.item-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;}
+.item-num{background:#1e3a5f;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.item-content{flex:1;}
+.item-tema{font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.item-text{font-size:14px;font-weight:500;line-height:1.5;color:#111827;}
+.item-sub{font-size:12px;color:#6b7280;margin-top:3px;line-height:1.4;}
+
+/* Likert buttons */
+.likert-row{display:flex;gap:6px;align-items:center;}
+.likert-btn{flex:1;padding:10px 6px;text-align:center;border:.5px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all .15s;background:#f9fafb;}
+.likert-btn:hover{background:#f3f4f6;border-color:#d1d5db;}
+.likert-num{font-size:16px;font-weight:700;display:block;margin-bottom:2px;color:#6b7280;}
+.likert-desc{font-size:9px;color:#9ca3af;line-height:1.2;}
+.likert-btn.sel-1{border-color:#dc2626;background:#fee2e2;} .likert-btn.sel-1 .likert-num{color:#dc2626;}
+.likert-btn.sel-2{border-color:#d97706;background:#fef3c7;} .likert-btn.sel-2 .likert-num{color:#d97706;}
+.likert-btn.sel-3{border-color:#ca8a04;background:#fef9c3;} .likert-btn.sel-3 .likert-num{color:#ca8a04;}
+.likert-btn.sel-4{border-color:#16a34a;background:#dcfce7;} .likert-btn.sel-4 .likert-num{color:#16a34a;}
+.likert-btn.sel-5{border-color:#059669;background:#d1fae5;} .likert-btn.sel-5 .likert-num{color:#059669;}
+
+/* Submit */
+.btn-submit{background:#1e3a5f;color:#fff;border:none;padding:13px 28px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;display:block;width:100%;margin-top:20px;}
+.btn-submit:hover{background:#1d4ed8;}
+.btn-submit:disabled{opacity:.45;cursor:not-allowed;}
+
+/* Resultado */
+.result-card{background:#fff;border-radius:12px;padding:32px;text-align:center;border:.5px solid #e5e7eb;}
+.result-card h2{font-size:20px;font-weight:600;margin-bottom:6px;}
+.result-intro{font-size:14px;color:#6b7280;margin-bottom:20px;}
+
+/* Radar visual */
+.radar-wrap{margin:20px 0;}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.bar-tema{font-size:11px;color:#374151;width:160px;text-align:right;flex-shrink:0;font-weight:500;}
+.bar-track{flex:1;background:#f3f4f6;border-radius:99px;height:18px;overflow:hidden;position:relative;}
+.bar-fill{height:100%;border-radius:99px;transition:width .6s;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;}
+.bar-val{font-size:10px;font-weight:700;color:#fff;}
+
+/* Perfil global */
+.perfil-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+.perfil-card{background:#f9fafb;border-radius:8px;padding:12px;text-align:center;}
+.perfil-val{font-size:22px;font-weight:700;}
+.perfil-lbl{font-size:10px;color:#6b7280;margin-top:2px;}
+
+.status-msg{font-size:13px;margin-top:12px;padding:10px 14px;border-radius:8px;}
+.status-ok{background:#d1fae5;color:#065f46;}
+.status-err{background:#fee2e2;color:#991b1b;}
+.status-warn{background:#fef3c7;color:#92400e;}
+
+.btn-restart{background:#fff;color:#374151;border:.5px solid #d1d5db;padding:11px 24px;border-radius:8px;font-size:13px;cursor:pointer;width:100%;margin-top:12px;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-title">Encuesta de Autoconfianza — Simulación Pediátrica</div>
+    <div class="top-sub">Hospital Simulado · Universidad de La Sabana</div>
+  </div>
+  <div style="text-align:right">
+    <div class="prog-lbl" id="prog-lbl">0 / 8 respondidas</div>
+    <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- INTRO -->
+  <div class="intro-card">
+    <h2>Encuesta de Autoconfianza Clínica</h2>
+    <p>Esta encuesta mide tu nivel de confianza en los temas de la rotación de simulación clínica en pediatría de urgencias. No hay respuestas correctas o incorrectas — refleja cómo te sientes <strong>realmente</strong> respecto a cada tema.</p>
+    <p>La encuesta se aplica al <strong>inicio (S0)</strong> y al <strong>final (S9)</strong> de la rotación para medir tu progreso.</p>
+    <div class="intro-note">Esta encuesta es <strong>anónima</strong> y de carácter formativo. No afecta tu nota de rotación. Tus respuestas contribuyen a la investigación del programa de simulación.</div>
+
+    <div class="id-grid" style="margin-top:20px;">
+      <div style="grid-column:1/-1">
+        <label>Código de participante (asignado por el docente)</label>
+        <input type="text" id="codigo" placeholder="Ej: G1-01">
+      </div>
+      <div>
+        <label>Semestre académico</label>
+        <select id="semestre">
+          <option value="">Seleccionar...</option>
+          <option>1° semestre</option><option>2° semestre</option>
+          <option>3° semestre</option><option>4° semestre</option>
+          <option>5° semestre</option><option>6° semestre</option>
+          <option>7° semestre</option><option>8° semestre</option>
+          <option>9° semestre</option><option>10° semestre</option>
+        </select>
+      </div>
+      <div>
+        <label>Momento de aplicación</label>
+        <select id="momento">
+          <option value="">Seleccionar...</option>
+          <option value="S0">S0 — Inicio de rotación</option>
+          <option value="S9">S9 — Cierre de rotación</option>
+        </select>
+      </div>
+      <div>
+        <label>Grupo de rotación</label>
+        <select id="grupo">
+          <option value="">Seleccionar...</option>
+          <option>Grupo 1</option><option>Grupo 2</option><option>Grupo 3</option>
+          <option>Grupo 4</option><option>Grupo 5</option><option>Grupo 6</option><option>Grupo 7</option>
+        </select>
+      </div>
+      <div>
+        <label>Experiencia previa en simulación clínica</label>
+        <select id="experiencia">
+          <option value="">Seleccionar...</option>
+          <option value="ninguna">Ninguna</option>
+          <option value="basica">Básica (1–2 talleres)</option>
+          <option value="intermedia">Intermedia (3–5 talleres)</option>
+          <option value="avanzada">Avanzada (más de 5 talleres)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESCALA DE REFERENCIA -->
+  <div class="scale-ref">
+    <div class="scale-ref-title">Escala de respuesta — ¿Qué tan seguro/a te sientes para manejar esta situación?</div>
+    <div class="scale-labels">
+      <div class="scale-lbl s1">1<br>Ninguna<br>confianza</div>
+      <div class="scale-lbl s2">2<br>Poca<br>confianza</div>
+      <div class="scale-lbl s3">3<br>Confianza<br>moderada</div>
+      <div class="scale-lbl s4">4<br>Buena<br>confianza</div>
+      <div class="scale-lbl s5">5<br>Plena<br>confianza</div>
+    </div>
+  </div>
+
+  <!-- ÍTEMS -->
+  <div id="items-area"></div>
+
+  <button class="btn-submit" id="btn-enviar" onclick="enviar()" disabled>
+    Enviar encuesta
+  </button>
+
+  <div id="result-area"></div>
+
+</div>
+
+<script>
+// ── ÍTEMS DE LA ENCUESTA ──────────────────────────────────────────────────
+const ITEMS = [
+  {
+    id: 'i1',
+    num: 1,
+    tema: 'Reanimación Cardiopulmonar Pediátrica',
+    text: '¿Qué tan seguro/a te sientes para reconocer un paro cardiorrespiratorio pediátrico y ejecutar el algoritmo PALS 2025 correctamente?',
+    sub: 'Incluye: identificación del ritmo, RCP de alta calidad, desfibrilación y medicamentos con dosis por peso.',
+  },
+  {
+    id: 'i2',
+    num: 2,
+    tema: 'Taquiarritmias en Pediatría',
+    text: '¿Qué tan seguro/a te sientes para identificar una taquiarritmia pediátrica en el monitor y tomar la decisión terapéutica correcta?',
+    sub: 'Incluye: diferenciar TSV de taquicardia sinusal, indicar adenosina, cardioversión o desfibrilación según estabilidad.',
+  },
+  {
+    id: 'i3',
+    num: 3,
+    tema: 'Bradiarritmias en Pediatría',
+    text: '¿Qué tan seguro/a te sientes para evaluar una bradicardia pediátrica y aplicar el algoritmo PALS 2025?',
+    sub: 'Incluye: criterio de intervención FC < 60 lpm + compromiso, atropina, identificar bloqueo AV y fármacos contraindicados.',
+  },
+  {
+    id: 'i4',
+    num: 4,
+    tema: 'Reanimación Neonatal (NRP 2025)',
+    text: '¿Qué tan seguro/a te sientes para ejecutar los pasos de reanimación neonatal según las guías NRP 2025 AHA/AAP?',
+    sub: 'Incluye: plan de manejo del cordón, pinzamiento diferido, VPP con 21% O₂, MRSOPA, compresiones 3:1, epinefrina umbilical.',
+  },
+  {
+    id: 'i5',
+    num: 5,
+    tema: 'Estabilización Neonatal (STABLE)',
+    text: '¿Qué tan seguro/a te sientes para aplicar la estrategia STABLE en la estabilización de un neonato crítico?',
+    sub: 'Incluye: los 6 módulos S-T-A-B-L-E, manejo de hipoglicemia neonatal, termorregulación y comunicación con la familia.',
+  },
+  {
+    id: 'i6',
+    num: 6,
+    tema: 'Falla Ventilatoria en Pediatría',
+    text: '¿Qué tan seguro/a te sientes para reconocer la falla ventilatoria inminente en un paciente pediátrico y manejar la vía aérea?',
+    sub: 'Incluye: signos de inminencia, técnica de BVM, indicaciones de intubación y parámetros básicos de ventilación mecánica.',
+  },
+  {
+    id: 'i7',
+    num: 7,
+    tema: 'Punción Intraósea y Punción Lumbar',
+    text: '¿Qué tan seguro/a te sientes para realizar una punción intraósea y una punción lumbar en pediatría bajo supervisión?',
+    sub: 'Incluye: indicaciones, sitio correcto, técnica de inserción, confirmación de posición IO e interpretación básica del LCR.',
+  },
+  {
+    id: 'i8',
+    num: 8,
+    tema: 'Autoconfianza general',
+    text: '¿Qué tan seguro/a te sientes EN GENERAL para responder a una emergencia pediátrica o neonatal como parte de un equipo de reanimación?',
+    sub: 'Considera tu preparación global: conocimientos, habilidades técnicas y trabajo en equipo en situaciones de urgencia.',
+  },
+];
+
+// ── ESTADO ────────────────────────────────────────────────────────────────
+const respuestas = {};
+const COLORES = ['','#dc2626','#d97706','#ca8a04','#16a34a','#059669'];
+const FILLS   = ['','fee2e2','fef3c7','fef9c3','dcfce7','d1fae5'];
+const DESCS   = ['','Ninguna','Poca','Moderada','Buena','Plena'];
+
+// ── RENDER ÍTEMS ──────────────────────────────────────────────────────────
+function renderItems(){
+  const area = document.getElementById('items-area');
+  area.innerHTML = ITEMS.map(item => `
+    <div class="item-card" id="card-${item.id}">
+      <div class="item-header">
+        <div class="item-num">${item.num}</div>
+        <div class="item-content">
+          <div class="item-tema">${item.tema}</div>
+          <div class="item-text">${item.text}</div>
+          <div class="item-sub">${item.sub}</div>
+        </div>
+      </div>
+      <div class="likert-row" id="likert-${item.id}">
+        ${[1,2,3,4,5].map(v=>`
+          <div class="likert-btn" id="btn-${item.id}-${v}" onclick="seleccionar('${item.id}',${v})">
+            <span class="likert-num">${v}</span>
+            <span class="likert-desc">${DESCS[v]}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function seleccionar(itemId, valor){
+  respuestas[itemId] = valor;
+  // Deseleccionar todos los botones del ítem
+  [1,2,3,4,5].forEach(v=>{
+    const btn = document.getElementById(`btn-${itemId}-${v}`);
+    btn.className = 'likert-btn';
+  });
+  // Seleccionar el elegido
+  document.getElementById(`btn-${itemId}-${valor}`).className = `likert-btn sel-${valor}`;
+  actualizarProg();
+}
+
+function actualizarProg(){
+  const n = Object.keys(respuestas).length;
+  document.getElementById('prog-lbl').textContent = `${n} / ${ITEMS.length} respondidas`;
+  document.getElementById('prog-bar').style.width = `${Math.round(n/ITEMS.length*100)}%`;
+  const allFilled = n >= ITEMS.length;
+  const codigo = document.getElementById('codigo').value.trim();
+  const momento = document.getElementById('momento').value;
+  const grupo = document.getElementById('grupo').value;
+  document.getElementById('btn-enviar').disabled = !(allFilled && codigo && momento && grupo);
+}
+
+['codigo','semestre','momento','grupo','experiencia'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el){
+    el.addEventListener('change', actualizarProg);
+    el.addEventListener('input', actualizarProg);
+  }
+});
+
+// ── ENVÍO ─────────────────────────────────────────────────────────────────
+async function enviar(){
+  const codigo    = document.getElementById('codigo').value.trim();
+  const semestre  = document.getElementById('semestre').value;
+  const momento   = document.getElementById('momento').value;
+  const grupo     = document.getElementById('grupo').value;
+  const experiencia = document.getElementById('experiencia').value;
+
+  if(!codigo || !momento || !grupo){
+    alert('Por favor completa todos los campos de identificación.');
+    return;
+  }
+
+  // Calcular puntajes
+  const vals = ITEMS.map(it => respuestas[it.id] || 0);
+  const suma  = vals.reduce((a,b)=>a+b,0);
+  const media = +(suma/ITEMS.length).toFixed(2);
+  const general = respuestas['i8'] || 0;
+
+  // Por tema (ítems 1-7) y general (ítem 8)
+  const porTema = {};
+  ITEMS.forEach(it => { porTema[it.tema] = respuestas[it.id] || 0; });
+
+  const payload = {
+    timestamp: new Date().toISOString(),
+    tipo_instrumento: 'autoconfianza',
+    codigo,
+    semestre,
+    momento,
+    grupo,
+    experiencia_previa: experiencia,
+    respuestas: porTema,
+    autoconfianza_general: general,
+    suma_total: suma,
+    media_total: media,
+    valores_individuales: vals,
+  };
+
+  // Mostrar resultado
+  mostrarResultado(payload, vals, media, general);
+
+  // Enviar a JSONBin
+  const BIN_ID  = '6a60ddf5da38895dfe7fee60';
+  const API_KEY = '$2a$10$yJBW6mob86NQpJ1uZ605EuNJnV3Znw/5Qbuloh1wS4cwb.UJBu9E2';
+
+  if(BIN_ID === 'NO_CONFIGURADO'){
+    document.getElementById('status-envio').innerHTML =
+      '<div class="status-msg status-warn">⚠ Configura tu BIN_ID y API_KEY de JSONBin para activar el envío automático.</div>';
+    return;
+  }
+
+  try {
+    document.getElementById('status-envio').innerHTML =
+      '<div class="status-msg" style="background:#f9fafb;color:#6b7280">Enviando datos...</div>';
+    const getRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
+      headers:{'X-Master-Key':API_KEY}
+    });
+    const getData = await getRes.json();
+    const registros = getData.record?.registros_autoconfianza || [];
+    registros.push(payload);
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+      body: JSON.stringify({registros_autoconfianza: registros})
+    });
+    document.getElementById('status-envio').innerHTML =
+      '<div class="status-msg status-ok">✓ Encuesta enviada correctamente al sistema de investigación.</div>';
+  } catch(e){
+    document.getElementById('status-envio').innerHTML =
+      '<div class="status-msg status-err">Error al enviar. Toma una captura de pantalla del resultado y compártela con el docente.</div>';
+  }
+}
+
+// ── RESULTADO ─────────────────────────────────────────────────────────────
+function mostrarResultado(payload, vals, media, general){
+  // Ocultar formulario
+  document.querySelector('.intro-card').style.display='none';
+  document.querySelector('.scale-ref').style.display='none';
+  document.getElementById('items-area').style.display='none';
+  document.getElementById('btn-enviar').style.display='none';
+
+  const momento = payload.momento;
+  const color   = media>=4?'#059669':media>=3?'#d97706':media>=2?'#d97706':'#dc2626';
+  const msg     = media>=4?'Nivel de autoconfianza alto en los temas de la rotación.':
+                  media>=3?'Nivel de autoconfianza moderado — la rotación fortalecerá estas áreas.':
+                  'Nivel de autoconfianza inicial — es el punto de partida esperado en S0.';
+
+  // Barras por tema
+  const barras = ITEMS.map((it,i) => {
+    const v = vals[i];
+    const pct = v/5*100;
+    const col = COLORES[v];
+    return `
+      <div class="bar-row">
+        <div class="bar-tema" title="${it.tema}">${it.tema.length>22?it.tema.substring(0,22)+'…':it.tema}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${col}">
+            <span class="bar-val">${v}/5</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Temas más y menos confiados (excluye ítem 8 general)
+  const temaCopy = ITEMS.slice(0,7).map((it,i)=>({tema:it.tema,val:vals[i]}));
+  const maxTema = temaCopy.reduce((a,b)=>a.val>=b.val?a:b);
+  const minTema = temaCopy.reduce((a,b)=>a.val<=b.val?a:b);
+
+  document.getElementById('result-area').innerHTML = `
+    <div class="result-card">
+      <h2>Resultado — Encuesta de Autoconfianza</h2>
+      <div class="result-intro">
+        ${momento==='S0'?'Sesión S0 — Inicio de rotación':'Sesión S9 — Cierre de rotación'} &nbsp;·&nbsp;
+        Código: <strong>${payload.codigo}</strong> &nbsp;·&nbsp; ${payload.grupo}
+      </div>
+
+      <div class="perfil-grid">
+        <div class="perfil-card">
+          <div class="perfil-val" style="color:${color}">${media.toFixed(1)}</div>
+          <div class="perfil-lbl">Promedio global (/ 5.0)</div>
+        </div>
+        <div class="perfil-card">
+          <div class="perfil-val" style="color:#1e3a5f">${general}/5</div>
+          <div class="perfil-lbl">Autoconfianza general</div>
+        </div>
+        <div class="perfil-card">
+          <div class="perfil-val" style="color:#6b7280">${payload.suma_total}</div>
+          <div class="perfil-lbl">Suma total (/ 40 pts)</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;color:${color};font-weight:500;margin-bottom:16px;">${msg}</div>
+
+      <div class="radar-wrap">${barras}</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;font-size:12px;">
+        <div style="background:#d1fae5;border-radius:8px;padding:10px 12px;color:#065f46;">
+          <strong>Mayor confianza:</strong><br>${maxTema.tema} (${maxTema.val}/5)
+        </div>
+        <div style="background:#fee2e2;border-radius:8px;padding:10px 12px;color:#991b1b;">
+          <strong>Menor confianza:</strong><br>${minTema.tema} (${minTema.val}/5)
+        </div>
+      </div>
+
+      ${momento==='S0'?`
+      <div style="background:#f9fafb;border-radius:8px;padding:12px;font-size:12px;color:#6b7280;margin-bottom:12px;text-align:left;">
+        Este perfil de S0 refleja tu punto de partida. Al finalizar la rotación (S9) completarás la misma encuesta y podrás comparar tu nivel de confianza en cada tema.
+      </div>`:
+      `<div style="background:#f9fafb;border-radius:8px;padding:12px;font-size:12px;color:#6b7280;margin-bottom:12px;text-align:left;">
+        Este es tu perfil al cierre de la rotación (S9). El docente comparará estos resultados con tu encuesta de S0 para medir el cambio en autoconfianza.
+      </div>`}
+
+      <div id="status-envio"></div>
+      <button class="btn-restart" onclick="reiniciar()">Completar otra encuesta</button>
+    </div>
+  `;
+}
+
+function reiniciar(){
+  Object.keys(respuestas).forEach(k=>delete respuestas[k]);
+  ['codigo','semestre','momento','grupo','experiencia'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.querySelector('.intro-card').style.display='';
+  document.querySelector('.scale-ref').style.display='';
+  document.getElementById('items-area').style.display='';
+  document.getElementById('btn-enviar').style.display='';
+  document.getElementById('btn-enviar').disabled=true;
+  document.getElementById('result-area').innerHTML='';
+  document.getElementById('prog-lbl').textContent='0 / 8 respondidas';
+  document.getElementById('prog-bar').style.width='0%';
+  renderItems();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderItems();
+</script>
+</body>
+</html>

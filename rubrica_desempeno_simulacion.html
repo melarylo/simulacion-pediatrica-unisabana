@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rúbrica de Desempeño — Simulación Pediátrica</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f3f4f6;color:#111827;min-height:100vh;}
+.top-bar{background:#1e3a5f;color:#fff;padding:13px 22px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.top-title{font-size:14px;font-weight:500;}
+.top-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.badge{background:#dbeafe;color:#1e40af;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;}
+.prog-wrap{background:rgba(255,255,255,.2);border-radius:99px;height:5px;width:140px;overflow:hidden;}
+.prog-bar{height:100%;background:#fbbf24;border-radius:99px;transition:width .3s;}
+.prog-lbl{font-size:10px;opacity:.7;text-align:right;margin-bottom:3px;}
+
+.container{max-width:780px;margin:0 auto;padding:20px 16px;}
+
+/* Intro */
+.intro-card{background:#fff;border-radius:12px;padding:24px;margin-bottom:16px;border:.5px solid #e5e7eb;}
+.intro-card h2{font-size:18px;font-weight:600;color:#1e3a5f;margin-bottom:8px;}
+.intro-note{background:#fef3c7;border:.5px solid #fcd34d;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-top:10px;}
+
+/* ID grid */
+.id-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;}
+.id-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.id-grid label,.id-grid-2 label{font-size:11px;font-weight:500;color:#6b7280;margin-bottom:3px;display:block;}
+.id-grid input,.id-grid select,.id-grid-2 input,.id-grid-2 select{width:100%;padding:7px 10px;border:.5px solid #d1d5db;border-radius:7px;font-size:13px;font-family:system-ui;}
+.id-grid input:focus,.id-grid select:focus,.id-grid-2 input:focus,.id-grid-2 select:focus{outline:none;border-color:#3b82f6;}
+
+/* Escenario selector */
+.escenario-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.esc-tab{padding:9px 16px;border-radius:8px;border:.5px solid #d1d5db;background:#fff;cursor:pointer;font-size:12px;font-weight:500;color:#6b7280;transition:all .15s;}
+.esc-tab:hover{background:#f9fafb;}
+.esc-tab.active{background:#1e3a5f;color:#fff;border-color:#1e3a5f;}
+
+/* Sección */
+.seccion{background:#fff;border:.5px solid #e5e7eb;border-radius:10px;margin-bottom:14px;overflow:hidden;}
+.seccion-header{background:#1e3a5f;padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.seccion-letra{width:28px;height:28px;background:#fff;color:#1e3a5f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.seccion-titulo{font-size:13px;font-weight:600;color:#fff;}
+.seccion-sub{font-size:10px;color:rgba(255,255,255,.7);margin-top:1px;}
+.seccion-body{padding:0;}
+
+/* Ítem de rúbrica */
+.rubrica-item{border-bottom:.5px solid #f3f4f6;padding:14px 16px;}
+.rubrica-item:last-child{border-bottom:none;}
+.item-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.item-num-badge{background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;flex-shrink:0;margin-top:2px;}
+.item-info{flex:1;}
+.item-name{font-size:13px;font-weight:600;color:#111827;}
+.item-desc{font-size:11px;color:#6b7280;margin-top:2px;line-height:1.4;}
+
+/* Escala 1-4 */
+.escala-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.escala-opt{border:.5px solid #e5e7eb;border-radius:7px;padding:8px 6px;cursor:pointer;transition:all .12s;background:#fafafa;}
+.escala-opt:hover{background:#f3f4f6;}
+.escala-num{font-size:15px;font-weight:700;text-align:center;margin-bottom:3px;color:#9ca3af;}
+.escala-label{font-size:10px;font-weight:600;text-align:center;margin-bottom:3px;}
+.escala-criterio{font-size:9.5px;color:#6b7280;text-align:center;line-height:1.35;}
+.escala-opt.sel-1{border-color:#dc2626;background:#fee2e2;} .escala-opt.sel-1 .escala-num{color:#dc2626;} .escala-opt.sel-1 .escala-label{color:#991b1b;}
+.escala-opt.sel-2{border-color:#d97706;background:#fef3c7;} .escala-opt.sel-2 .escala-num{color:#d97706;} .escala-opt.sel-2 .escala-label{color:#92400e;}
+.escala-opt.sel-3{border-color:#2563eb;background:#dbeafe;} .escala-opt.sel-3 .escala-num{color:#2563eb;} .escala-opt.sel-3 .escala-label{color:#1e40af;}
+.escala-opt.sel-4{border-color:#059669;background:#d1fae5;} .escala-opt.sel-4 .escala-num{color:#059669;} .escala-opt.sel-4 .escala-label{color:#065f46;}
+
+/* Observaciones */
+.obs-area{padding:10px 16px 14px;}
+.obs-label{font-size:11px;font-weight:500;color:#6b7280;margin-bottom:4px;}
+.obs-input{width:100%;padding:8px 10px;border:.5px solid #d1d5db;border-radius:7px;font-size:12px;font-family:system-ui;resize:vertical;min-height:52px;}
+.obs-input:focus{outline:none;border-color:#3b82f6;}
+
+/* Resumen puntaje */
+.score-bar{background:#f9fafb;border:.5px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.score-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.score-label{font-size:12px;color:#6b7280;}
+.score-val{font-size:18px;font-weight:700;color:#1e3a5f;}
+.score-track{background:#e5e7eb;border-radius:99px;height:8px;overflow:hidden;}
+.score-fill{height:100%;border-radius:99px;background:#1e3a5f;transition:width .4s;}
+
+/* Submit */
+.btn-submit{background:#1e3a5f;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;width:100%;margin-top:4px;}
+.btn-submit:hover{background:#1d4ed8;}
+.btn-submit:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Resultado */
+.result-card{background:#fff;border-radius:12px;padding:28px;border:.5px solid #e5e7eb;}
+.result-score-big{font-size:52px;font-weight:700;margin:10px 0 4px;}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+.rg-item{background:#f9fafb;border-radius:8px;padding:10px;text-align:center;}
+.rg-val{font-size:20px;font-weight:700;color:#1e3a5f;}
+.rg-lbl{font-size:10px;color:#6b7280;margin-top:2px;}
+.detail-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:14px;text-align:left;}
+.detail-table th{background:#1e3a5f;color:#fff;padding:7px 10px;font-weight:500;font-size:11px;}
+.detail-table td{padding:6px 10px;border-bottom:.5px solid #e5e7eb;}
+.detail-table tr:nth-child(even) td{background:#f9fafb;}
+.status-msg{font-size:13px;margin-top:12px;padding:10px 14px;border-radius:8px;}
+.status-ok{background:#d1fae5;color:#065f46;}
+.status-err{background:#fee2e2;color:#991b1b;}
+.status-warn{background:#fef3c7;color:#92400e;}
+.btn-restart{background:#fff;color:#374151;border:.5px solid #d1d5db;padding:10px 20px;border-radius:8px;font-size:12px;cursor:pointer;width:100%;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-title">Rúbrica de Desempeño en Simulación &nbsp;<span class="badge">Docente</span></div>
+    <div class="top-sub">Hospital Simulado · Universidad de La Sabana</div>
+  </div>
+  <div style="text-align:right">
+    <div class="prog-lbl" id="prog-lbl">0 ítems valorados</div>
+    <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- IDENTIFICACIÓN -->
+  <div class="intro-card">
+    <h2>Rúbrica de Desempeño en Simulación Clínica</h2>
+    <p style="font-size:13px;color:#374151;margin-bottom:4px;">Instrumento observacional aplicado por el docente durante la simulación presencial en <strong>S0</strong> (inicio) y <strong>S9</strong> (cierre) de la rotación.</p>
+    <div class="intro-note">Instrumento de uso EXCLUSIVO del docente evaluador. Escala 1–4 por ítem: 1 = Insuficiente · 2 = En desarrollo · 3 = Competente · 4 = Experto.</div>
+
+    <div class="id-grid">
+      <div>
+        <label>Código del estudiante</label>
+        <input type="text" id="codigo" placeholder="Ej: G1-01">
+      </div>
+      <div>
+        <label>Grupo de rotación</label>
+        <select id="grupo">
+          <option value="">Seleccionar...</option>
+          <option>Grupo 1</option><option>Grupo 2</option><option>Grupo 3</option>
+          <option>Grupo 4</option><option>Grupo 5</option><option>Grupo 6</option><option>Grupo 7</option>
+        </select>
+      </div>
+      <div>
+        <label>Momento</label>
+        <select id="momento">
+          <option value="">Seleccionar...</option>
+          <option value="S0">S0 — Inicio de rotación</option>
+          <option value="S9">S9 — Cierre de rotación</option>
+        </select>
+      </div>
+    </div>
+    <div class="id-grid-2" style="margin-top:10px;">
+      <div>
+        <label>Docente evaluador</label>
+        <input type="text" id="docente" placeholder="Nombre del evaluador">
+      </div>
+      <div>
+        <label>Escenario simulado</label>
+        <select id="escenario-select" onchange="cambiarEscenario(this.value)">
+          <option value="">Seleccionar escenario...</option>
+          <option value="rcp">RCP Pediátrica — PALS 2025</option>
+          <option value="arritmias">Taquiarritmias / Bradiarritmias</option>
+          <option value="neonatal">Reanimación Neonatal — NRP 2025</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="rubrica-area" style="display:none;">
+
+    <!-- PARTE A — HABILIDADES GENERALES -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <div class="seccion-letra">A</div>
+        <div>
+          <div class="seccion-titulo">Habilidades no técnicas — Aplicable a todos los escenarios</div>
+          <div class="seccion-sub">Trabajo en equipo · Comunicación · Liderazgo · Seguridad</div>
+        </div>
+      </div>
+      <div class="seccion-body" id="items-general"></div>
+      <div class="obs-area">
+        <div class="obs-label">Observaciones — Habilidades no técnicas</div>
+        <textarea class="obs-input" id="obs-general" placeholder="Fortalezas y áreas de mejora observadas durante el escenario..."></textarea>
+      </div>
+    </div>
+
+    <!-- PARTE B — HABILIDADES ESPECÍFICAS -->
+    <div class="seccion">
+      <div class="seccion-header" style="background:#065f46;">
+        <div class="seccion-letra" style="color:#065f46;">B</div>
+        <div>
+          <div class="seccion-titulo">Habilidades técnicas — <span id="escenario-titulo">Escenario específico</span></div>
+          <div class="seccion-sub">Ejecución de procedimientos según algoritmo clínico</div>
+        </div>
+      </div>
+      <div class="seccion-body" id="items-especifico"></div>
+      <div class="obs-area">
+        <div class="obs-label">Observaciones — Habilidades técnicas</div>
+        <textarea class="obs-input" id="obs-especifico" placeholder="Aspectos técnicos observados: correcta aplicación del algoritmo, dosis, técnica procedimental..."></textarea>
+      </div>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="score-bar" id="score-bar">
+      <div class="score-row">
+        <span class="score-label">Puntaje Parte A (Habilidades no técnicas)</span>
+        <span class="score-val" id="sc-a">—</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">Puntaje Parte B (Habilidades técnicas)</span>
+        <span class="score-val" id="sc-b">—</span>
+      </div>
+      <div class="score-row" style="margin-bottom:6px;">
+        <span class="score-label" style="font-weight:600;color:#111827;">Puntaje total</span>
+        <span class="score-val" id="sc-total" style="font-size:22px;">—</span>
+      </div>
+      <div class="score-track"><div class="score-fill" id="score-fill" style="width:0%"></div></div>
+    </div>
+
+    <button class="btn-submit" id="btn-enviar" onclick="enviar()" disabled>
+      Guardar y enviar evaluación
+    </button>
+
+  </div><!-- /rubrica-area -->
+
+  <div id="result-area"></div>
+
+</div><!-- /container -->
+
+<script>
+// ── ÍTEMS PARTE A — GENERALES ─────────────────────────────────────────────
+const ITEMS_A = [
+  {
+    id:'a1', name:'Comunicación en circuito cerrado',
+    desc:'Emite instrucciones claras con nombre + acción + dosis. Confirma la recepción repitiendo la orden. Cierra el circuito antes de proceder.',
+    criterios:[
+      'No emite instrucciones claras. No confirma órdenes. Comunicación caótica o ausente.',
+      'Emite algunas instrucciones pero sin confirmación consistente. Comunicación incompleta.',
+      'Comunica en circuito cerrado la mayoría del tiempo. Confirma órdenes críticas.',
+      'Comunicación en circuito cerrado sistemática y efectiva en todas las interacciones del equipo.',
+    ]
+  },
+  {
+    id:'a2', name:'Liderazgo del equipo',
+    desc:'Dirige activamente al equipo, asigna roles, mantiene el modelo mental compartido y orienta las decisiones clínicas.',
+    criterios:[
+      'No ejerce liderazgo. El equipo actúa sin dirección. Roles no asignados.',
+      'Intenta dirigir pero con inconsistencia. Asignación de roles parcial o tardía.',
+      'Dirige el equipo con claridad en la mayoría de las situaciones. Asigna roles adecuadamente.',
+      'Liderazgo claro y efectivo durante todo el escenario. Mantiene modelo mental del equipo.',
+    ]
+  },
+  {
+    id:'a3', name:'Trabajo en equipo y distribución de tareas',
+    desc:'Distribuye las tareas equitativamente, integra los aportes de los miembros y ajusta roles según las necesidades del escenario.',
+    criterios:[
+      'No distribuye tareas. Trabaja de forma aislada o asume todas las funciones.',
+      'Distribución de tareas inconsistente. Algunos miembros sin rol definido.',
+      'Distribuye tareas apropiadamente. Integra los aportes del equipo en la mayoría de decisiones.',
+      'Distribución eficiente y dinámica. Todos los miembros tienen rol activo y coordinado.',
+    ]
+  },
+  {
+    id:'a4', name:'Conciencia situacional',
+    desc:'Mantiene visión global del escenario, anticipa eventos, reconoce cambios en el estado del paciente y actualiza el plan clínico.',
+    criterios:[
+      'No reconoce cambios en el estado del paciente. Foco excesivo en una sola tarea.',
+      'Reconoce algunos cambios pero con retraso. Conciencia situacional parcial.',
+      'Monitorea activamente al paciente y anticipa la mayoría de cambios clínicos.',
+      'Conciencia situacional completa. Anticipa eventos y adapta el plan proactivamente.',
+    ]
+  },
+  {
+    id:'a5', name:'Manejo del estrés y toma de decisiones bajo presión',
+    desc:'Mantiene calma y claridad en el razonamiento clínico ante situaciones de urgencia y presión temporal.',
+    criterios:[
+      'Se paraliza o actúa impulsivamente bajo presión. Decisiones incorrectas o ausentes.',
+      'Evidencia estrés que afecta parcialmente sus decisiones. Requiere apoyo frecuente.',
+      'Mantiene la calma en la mayoría de situaciones. Toma decisiones razonadas con orientación puntual.',
+      'Calma y liderazgo clínico sostenidos bajo presión máxima. Decisiones correctas y oportunas.',
+    ]
+  },
+  {
+    id:'a6', name:'Seguridad del paciente simulado',
+    desc:'Verifica identidad, alergias, dosis, vías de administración y verbalizaactuaciones críticas antes de ejecutarlas.',
+    criterios:[
+      'No verifica dosis, vías ni indicaciones. Comete errores de seguridad sin reconocerlos.',
+      'Verifica algunas acciones críticas. Omite verificaciones importantes de seguridad.',
+      'Verbaliza y verifica las actuaciones críticas en la mayoría de pasos del escenario.',
+      'Cultura de seguridad explícita en todo el escenario. Verifica sistemáticamente antes de actuar.',
+    ]
+  },
+];
+
+// ── ÍTEMS PARTE B — ESPECÍFICOS POR ESCENARIO ─────────────────────────────
+const ESCENARIOS = {
+  rcp: {
+    titulo: 'RCP Pediátrica — PALS 2025',
+    items: [
+      {
+        id:'b1', name:'Reconocimiento del paro',
+        desc:'Identifica ausencia de respuesta, apnea y ausencia de pulso. Activa el sistema de emergencias. Todo en < 10 segundos.',
+        criterios:['No reconoce el PCR o tarda > 30 segundos. No activa el sistema.','Reconoce el PCR con retraso o activa el sistema de forma incompleta.','Reconoce el PCR en < 15 segundos y activa el sistema correctamente.','Reconocimiento inmediato (< 10 seg), activación del sistema y asignación de roles simultánea.']
+      },
+      {
+        id:'b2', name:'RCP de alta calidad',
+        desc:'Compresiones 100–120/min, profundidad adecuada (1/3 del diámetro AP), retroceso completo, mínimas interrupciones (< 10 seg), rotación cada 2 min.',
+        criterios:['Frecuencia o profundidad incorrectas. Interrupciones > 10 seg. Sin rotación.','RCP con errores en 2 o más parámetros de calidad. Interrupciones frecuentes.','RCP con parámetros correctos con errores puntuales. Interrupciones ocasionales.','RCP de alta calidad sostenida. Todos los parámetros correctos. Rotación oportuna.']
+      },
+      {
+        id:'b3', name:'Manejo del ritmo y desfibrilación',
+        desc:'Analiza el ritmo correctamente. Identifica ritmo desfibrilable vs no desfibrilable. Aplica la dosis correcta de energía y el momento adecuado (PALS 2025).',
+        criterios:['No identifica el ritmo o comete error en la indicación de desfibrilación.','Identifica el ritmo con ayuda. Aplica desfibrilación pero con errores de dosis o momento.','Identifica el ritmo correctamente. Desfibrilación con dosis y momento apropiados.','Análisis de ritmo ágil y correcto. Desfibrilación ejecutada con seguridad y en el momento preciso.']
+      },
+      {
+        id:'b4', name:'Medicamentos y dosis por peso',
+        desc:'Calcula y administra epinefrina, amiodarona o lidocaína con la dosis correcta por peso, la vía correcta y el momento correcto según el algoritmo.',
+        criterios:['Error de dosis > 50% o vía incorrecta. No calcula por peso.','Error de dosis < 50% o vía correcta pero momento incorrecto en el algoritmo.','Dosis correcta por peso y vía correcta. Momento adecuado con orientación puntual.','Cálculo ágil y correcto. Medicamentos administrados en el momento y vía exactos del algoritmo.']
+      },
+      {
+        id:'b5', name:'Cuidados post-ROSC',
+        desc:'Identifica el ROSC. Define metas: SpO₂ 94-99%, temperatura < 37.5°C, bolo reducido si disfunción miocárdica. Organiza el traslado a UCIP.',
+        criterios:['No identifica el ROSC o no establece ninguna meta post-reanimación.','Identifica el ROSC pero establece metas incorrectas o incompletas.','Establece las metas post-ROSC correctas con orientación puntual.','ROSC identificado de inmediato. Metas establecidas correctamente y plan de traslado organizado.']
+      },
+    ]
+  },
+  arritmias: {
+    titulo: 'Taquiarritmias / Bradiarritmias — PALS 2025',
+    items: [
+      {
+        id:'b1', name:'Evaluación de estabilidad hemodinámica',
+        desc:'Evalúa FC, PA, perfusión y estado de conciencia. Clasifica correctamente al paciente como estable o inestable antes de decidir el tratamiento.',
+        criterios:['No evalúa la estabilidad o la clasifica incorrectamente.','Evalúa algunos parámetros. Clasificación incompleta o con error.','Evalúa correctamente la estabilidad con mínima orientación.','Evaluación sistemática y completa. Clasifica con precisión e inicia el tratamiento apropiado.']
+      },
+      {
+        id:'b2', name:'Identificación del ritmo en el monitor',
+        desc:'Identifica correctamente el tipo de arritmia (TSV, taquicardia sinusal, TV, FV, bradicardia sinusal, bloqueo AV) con criterios ECG.',
+        criterios:['No identifica el ritmo o lo confunde con otra arritmia.','Identifica el ritmo con dudas significativas o requiere ayuda para el diagnóstico.','Identifica el ritmo correctamente con pequeña demora o una sola consulta.','Identificación rápida y correcta del ritmo. Justifica con criterios ECG precisos.']
+      },
+      {
+        id:'b3', name:'Selección y ejecución del tratamiento',
+        desc:'Selecciona el tratamiento correcto según algoritmo PALS 2025 (maniobras vagales, adenosina, cardioversión, desfibrilación, atropina) con dosis y vía correctas.',
+        criterios:['Selecciona el tratamiento incorrecto o la dosis es errónea.','Selecciona el tratamiento correcto pero con error de dosis o momento.','Tratamiento correcto con dosis y vía apropiadas. Pequeño retraso en la ejecución.','Tratamiento correcto, dosis exacta, momento apropiado y ejecución técnica impecable.']
+      },
+      {
+        id:'b4', name:'Aplicación del algoritmo PALS 2025',
+        desc:'Sigue el algoritmo en secuencia correcta: evalúa → clasifica → trata → reevalúa. Reconoce cuándo escalar o cambiar de estrategia.',
+        criterios:['No sigue el algoritmo. Acciones sin secuencia lógica.','Sigue el algoritmo parcialmente. Omite pasos o no reevalúa tras el tratamiento.','Sigue el algoritmo en secuencia con mínimas omisiones. Reevalúa correctamente.','Algoritmo ejecutado en secuencia completa y ágil. Reevalúa y adapta el plan con autonomía.']
+      },
+      {
+        id:'b5', name:'Identificación de causas reversibles',
+        desc:'Menciona o busca activamente las causas reversibles (hipoxia, hipovolemia, hipotermia, hiperpotasemia, neumotórax, taponamiento) según el contexto.',
+        criterios:['No menciona ninguna causa reversible.','Menciona 1–2 causas reversibles sin sistematización.','Menciona las causas reversibles relevantes al contexto del escenario.','Búsqueda activa y sistemática de causas reversibles durante todo el escenario.']
+      },
+    ]
+  },
+  neonatal: {
+    titulo: 'Reanimación Neonatal — NRP 2025',
+    items: [
+      {
+        id:'b1', name:'Plan de manejo del cordón y pasos iniciales',
+        desc:'Verbaliza el plan de manejo del cordón. Ejecuta pinzamiento diferido ≥ 60 seg si corresponde. Completa los pasos iniciales en el primer minuto.',
+        criterios:['No verbaliza el plan del cordón. Pinzamiento inmediato sin justificación. Pasos iniciales incompletos.','Verbaliza el plan del cordón pero lo ejecuta incorrectamente. Pasos iniciales parciales.','Plan del cordón correcto. Pasos iniciales completos con mínima orientación.','Plan de cordón verbalizado y ejecutado correctamente. Pasos iniciales completos y en secuencia.']
+      },
+      {
+        id:'b2', name:'Evaluación de FC y decisión de VPP',
+        desc:'Evalúa correctamente la FC (ECG o auscultación). Identifica el umbral de VPP (FC < 100 lpm o apnea). Inicia VPP en el momento correcto.',
+        criterios:['No evalúa la FC o usa un método inadecuado. Retrasa o no inicia VPP cuando está indicada.','Evalúa FC pero con retraso. Inicia VPP con demora o ante un umbral incorrecto.','Evaluación de FC correcta. VPP iniciada en el momento apropiado con mínima orientación.','FC evaluada con ECG o auscultación correctamente. VPP iniciada de inmediato con indicación precisa.']
+      },
+      {
+        id:'b3', name:'Técnica de VPP y pasos correctivos (MRSOPA)',
+        desc:'Realiza VPP con 21% O₂ en término. Verifica elevación torácica. Aplica pasos MRSOPA si VPP es inefectiva.',
+        criterios:['VPP con FiO₂ incorrecta. No verifica elevación torácica. No aplica MRSOPA ante VPP inefectiva.','VPP con FiO₂ correcta pero sin verificar elevación. Aplica MRSOPA parcialmente.','VPP correcta con verificación de elevación. Aplica MRSOPA con orientación puntual.','VPP con 21% O₂, elevación verificada, MRSOPA aplicado correctamente de forma autónoma.']
+      },
+      {
+        id:'b4', name:'Compresiones torácicas neonatales',
+        desc:'Inicia compresiones cuando la FC < 60 lpm tras VPP efectiva. Usa técnica 2 pulgares encircling. Mantiene relación 3:1. Usa 100% O₂.',
+        criterios:['Inicia compresiones ante indicación incorrecta. Técnica incorrecta. Relación errónea.','Indicación correcta pero técnica o relación 3:1 con errores significativos.','Indicación, técnica y relación 3:1 correctas con orientación puntual.','Compresiones iniciadas al momento correcto, técnica 2 pulgares impecable, relación 3:1 coordinada.']
+      },
+      {
+        id:'b5', name:'Acceso vascular y medicamentos',
+        desc:'Indica e intenta catéter venoso umbilical (CUV). Administra epinefrina IV/IO 0.01–0.03 mg/kg con flush de SSN. Conoce dosis endotraqueal si aplica.',
+        criterios:['No indica CUV o administra epinefrina con dosis incorrecta y sin flush.','Indica CUV pero con demora. Epinefrina con dosis o vía con error menor.','CUV indicado oportunamente. Epinefrina con dosis correcta y flush apropiado con orientación.','CUV indicado de inmediato. Epinefrina IV/IO dosis correcta, flush adecuado. Conoce dosis ET.']
+      },
+    ]
+  }
+};
+
+// ── ESTADO ────────────────────────────────────────────────────────────────
+let respuestas = {};
+let escenarioActual = '';
+let totalItems = 0;
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderItem(item, parte){
+  const LABELS = ['','Insuficiente','En desarrollo','Competente','Experto'];
+  return `
+    <div class="rubrica-item" id="item-wrap-${item.id}">
+      <div class="item-top">
+        <span class="item-num-badge">${parte}.${item.id.replace(/[ab]/,'')}</span>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-desc">${item.desc}</div>
+        </div>
+      </div>
+      <div class="escala-row">
+        ${[1,2,3,4].map(v=>`
+          <div class="escala-opt" id="opt-${item.id}-${v}" onclick="seleccionar('${item.id}',${v},'${parte}')">
+            <div class="escala-num">${v}</div>
+            <div class="escala-label">${LABELS[v]}</div>
+            <div class="escala-criterio">${item.criterios[v-1]}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function cambiarEscenario(val){
+  if(!val) return;
+  escenarioActual = val;
+  respuestas = {};
+  const esc = ESCENARIOS[val];
+  document.getElementById('escenario-titulo').textContent = esc.titulo;
+
+  // Renderizar parte A
+  document.getElementById('items-general').innerHTML =
+    ITEMS_A.map(it=>renderItem(it,'A')).join('');
+
+  // Renderizar parte B
+  document.getElementById('items-especifico').innerHTML =
+    esc.items.map(it=>renderItem(it,'B')).join('');
+
+  totalItems = ITEMS_A.length + esc.items.length;
+  document.getElementById('rubrica-area').style.display='';
+  actualizarScore();
+  window.scrollTo({top:200,behavior:'smooth'});
+}
+
+function seleccionar(itemId, valor, parte){
+  respuestas[itemId] = {valor, parte};
+  [1,2,3,4].forEach(v=>{
+    const el = document.getElementById(`opt-${itemId}-${v}`);
+    if(el) el.className = 'escala-opt';
+  });
+  const sel = document.getElementById(`opt-${itemId}-${valor}`);
+  if(sel) sel.className = `escala-opt sel-${valor}`;
+  actualizarScore();
+}
+
+function actualizarScore(){
+  const vals = Object.values(respuestas);
+  const n = vals.length;
+  document.getElementById('prog-lbl').textContent = `${n} / ${totalItems} ítems valorados`;
+  document.getElementById('prog-bar').style.width = `${Math.round(n/totalItems*100)}%`;
+
+  // Calcular puntajes por parte
+  const valsA = vals.filter(v=>v.parte==='A').map(v=>v.valor);
+  const valsB = vals.filter(v=>v.parte==='B').map(v=>v.valor);
+  const maxA = ITEMS_A.length * 4;
+  const maxB = (ESCENARIOS[escenarioActual]?.items.length||0) * 4;
+  const sumA = valsA.reduce((a,b)=>a+b,0);
+  const sumB = valsB.reduce((a,b)=>a+b,0);
+  const sumTotal = sumA + sumB;
+  const maxTotal = maxA + maxB;
+
+  document.getElementById('sc-a').textContent = valsA.length>0?`${sumA}/${maxA}`:'—';
+  document.getElementById('sc-b').textContent = valsB.length>0?`${sumB}/${maxB}`:'—';
+  document.getElementById('sc-total').textContent = n>0?`${sumTotal}/${maxTotal}`:'—';
+  document.getElementById('score-fill').style.width = maxTotal>0?`${Math.round(sumTotal/maxTotal*100)}%`:'0%';
+
+  const allDone = n >= totalItems;
+  const codigo = document.getElementById('codigo').value.trim();
+  const momento = document.getElementById('momento').value;
+  const grupo = document.getElementById('grupo').value;
+  document.getElementById('btn-enviar').disabled = !(allDone && codigo && momento && grupo && escenarioActual);
+}
+
+['codigo','grupo','momento','docente'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){el.addEventListener('change',actualizarScore);el.addEventListener('input',actualizarScore);}
+});
+
+// ── ENVÍO ─────────────────────────────────────────────────────────────────
+async function enviar(){
+  const codigo   = document.getElementById('codigo').value.trim();
+  const grupo    = document.getElementById('grupo').value;
+  const momento  = document.getElementById('momento').value;
+  const docente  = document.getElementById('docente').value.trim();
+  const esc      = ESCENARIOS[escenarioActual];
+
+  // Construir payload
+  const detalleA={}, detalleB={};
+  ITEMS_A.forEach(it=>{detalleA[it.name]=respuestas[it.id]?.valor||0;});
+  esc.items.forEach(it=>{detalleB[it.name]=respuestas[it.id]?.valor||0;});
+
+  const valsA = ITEMS_A.map(it=>respuestas[it.id]?.valor||0);
+  const valsB = esc.items.map(it=>respuestas[it.id]?.valor||0);
+  const maxA=ITEMS_A.length*4, maxB=esc.items.length*4;
+  const sumA=valsA.reduce((a,b)=>a+b,0), sumB=valsB.reduce((a,b)=>a+b,0);
+
+  const payload={
+    timestamp: new Date().toISOString(),
+    tipo_instrumento: 'rubrica_desempeno',
+    codigo, grupo, momento, docente,
+    escenario: escenarioActual,
+    escenario_nombre: esc.titulo,
+    parte_A_habilidades_generales: detalleA,
+    parte_B_habilidades_especificas: detalleB,
+    puntaje_A: sumA, maximo_A: maxA,
+    puntaje_B: sumB, maximo_B: maxB,
+    puntaje_total: sumA+sumB, maximo_total: maxA+maxB,
+    porcentaje: Math.round((sumA+sumB)/(maxA+maxB)*100),
+    obs_general: document.getElementById('obs-general').value,
+    obs_especifico: document.getElementById('obs-especifico').value,
+  };
+
+  mostrarResultado(payload, valsA, valsB, sumA, sumB, maxA, maxB);
+
+  const BIN_ID  = '6a60ddf5da38895dfe7fee60';
+  const API_KEY = '$2a$10$yJBW6mob86NQpJ1uZ605EuNJnV3Znw/5Qbuloh1wS4cwb.UJBu9E2';
+
+  if(BIN_ID==='NO_CONFIGURADO'){
+    document.getElementById('status-envio').innerHTML=
+      '<div class="status-msg status-warn">⚠ Configura tu BIN_ID y API_KEY de JSONBin para activar el envío automático.</div>';
+    return;
+  }
+
+  try{
+    document.getElementById('status-envio').innerHTML=
+      '<div class="status-msg" style="background:#f9fafb;color:#6b7280">Guardando evaluación...</div>';
+    const getRes=await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{headers:{'X-Master-Key':API_KEY}});
+    const getData=await getRes.json();
+    const registros=getData.record?.registros_rubrica||[];
+    registros.push(payload);
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+      body:JSON.stringify({registros_rubrica:registros})
+    });
+    document.getElementById('status-envio').innerHTML=
+      '<div class="status-msg status-ok">✓ Evaluación guardada correctamente en el sistema de investigación.</div>';
+  } catch(e){
+    document.getElementById('status-envio').innerHTML=
+      '<div class="status-msg status-err">Error al guardar. Toma una captura de pantalla del resultado.</div>';
+  }
+}
+
+function mostrarResultado(p, valsA, valsB, sumA, sumB, maxA, maxB){
+  const pct = Math.round((sumA+sumB)/(maxA+maxB)*100);
+  const col = pct>=75?'#059669':pct>=50?'#d97706':'#dc2626';
+  const nivel = pct>=75?'Desempeño competente a experto':pct>=50?'Desempeño en desarrollo':'Desempeño insuficiente — requiere refuerzo';
+
+  const LABELS=['','Insuf.','En desarrollo','Competente','Experto'];
+  const COLS=['','#dc2626','#d97706','#2563eb','#059669'];
+
+  const filasA = ITEMS_A.map((it,i)=>`
+    <tr><td>${it.name}</td>
+    <td style="text-align:center;font-weight:700;color:${COLS[valsA[i]]}">${valsA[i]} — ${LABELS[valsA[i]]}</td></tr>`).join('');
+  const filasB = ESCENARIOS[p.escenario].items.map((it,i)=>`
+    <tr><td>${it.name}</td>
+    <td style="text-align:center;font-weight:700;color:${COLS[valsB[i]]}">${valsB[i]} — ${LABELS[valsB[i]]}</td></tr>`).join('');
+
+  document.querySelector('.intro-card').style.display='none';
+  document.getElementById('rubrica-area').style.display='none';
+
+  document.getElementById('result-area').innerHTML=`
+    <div class="result-card">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">
+        Rúbrica de Desempeño · ${p.escenario_nombre}
+      </div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">
+        Estudiante: <strong>${p.codigo}</strong> · ${p.grupo} · ${p.momento}
+      </div>
+      <div class="result-score-big" style="color:${col}">${sumA+sumB}<span style="font-size:24px;color:#9ca3af">/${maxA+maxB}</span></div>
+      <div style="font-size:14px;color:${col};font-weight:500;margin-bottom:16px">${pct}% — ${nivel}</div>
+
+      <div class="result-grid">
+        <div class="rg-item"><div class="rg-val">${sumA}/${maxA}</div><div class="rg-lbl">Parte A — No técnicas</div></div>
+        <div class="rg-item"><div class="rg-val">${sumB}/${maxB}</div><div class="rg-lbl">Parte B — Técnicas</div></div>
+        <div class="rg-item"><div class="rg-val">${pct}%</div><div class="rg-lbl">Porcentaje global</div></div>
+      </div>
+
+      <table class="detail-table">
+        <thead><tr><th colspan="2">A — Habilidades no técnicas</th></tr></thead>
+        <tbody>${filasA}</tbody>
+        <thead><tr><th colspan="2">B — Habilidades técnicas · ${p.escenario_nombre}</th></tr></thead>
+        <tbody>${filasB}</tbody>
+      </table>
+
+      ${p.obs_general?`<div style="background:#f9fafb;border-radius:8px;padding:10px 12px;margin-top:12px;font-size:12px;text-align:left;"><strong>Observaciones generales:</strong> ${p.obs_general}</div>`:''}
+      ${p.obs_especifico?`<div style="background:#f9fafb;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;text-align:left;"><strong>Observaciones técnicas:</strong> ${p.obs_especifico}</div>`:''}
+
+      <div id="status-envio"></div>
+      <button class="btn-restart" onclick="reiniciar()">Evaluar otro estudiante</button>
+    </div>`;
+}
+
+function reiniciar(){
+  respuestas={};
+  escenarioActual='';
+  totalItems=0;
+  ['codigo','grupo','momento','docente'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('escenario-select').value='';
+  document.getElementById('obs-general').value='';
+  document.getElementById('obs-especifico').value='';
+  document.getElementById('rubrica-area').style.display='none';
+  document.querySelector('.intro-card').style.display='';
+  document.getElementById('result-area').innerHTML='';
+  document.getElementById('prog-lbl').textContent='0 ítems valorados';
+  document.getElementById('prog-bar').style.width='0%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

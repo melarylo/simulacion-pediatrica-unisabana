@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Bradiarritmias Pediátricas — PALS 2025</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #fff; color: #1a1a1a; padding: 1.5rem; max-width: 820px; margin: 0 auto; font-size: 14px; }
+h1 { font-size: 16px; font-weight: 500; }
+.subtitle { font-size: 11px; color: #6b7280; margin-top: 2px; margin-bottom: 1.2rem; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+.bi { background: #dbeafe; color: #1e40af; }
+.bg { background: #f3f4f6; color: #374151; }
+.prog-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1.2rem; }
+.prog-bar { flex: 1; height: 4px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; background: #3b82f6; border-radius: 99px; transition: width .4s; }
+.prog-label { font-size: 11px; color: #6b7280; white-space: nowrap; }
+.score-pill { font-size: 11px; padding: 2px 10px; border-radius: 99px; background: #f3f4f6; color: #374151; }
+.pals-concept { background: #eff6ff; border: 0.5px solid #93c5fd; border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; font-size: 12px; color: #1e40af; display: flex; gap: 8px; align-items: flex-start; }
+.case-concept { background: #fef3c7; border: 0.5px solid #fcd34d; border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; font-size: 12px; color: #92400e; display: flex; gap: 8px; align-items: flex-start; }
+.case-card { border: 0.5px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.case-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.case-avatar { width: 36px; height: 36px; border-radius: 50%; background: #fef3c7; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.case-name { font-size: 14px; font-weight: 500; }
+.case-meta { font-size: 11px; color: #6b7280; }
+.case-text { font-size: 13px; line-height: 1.65; color: #374151; }
+.vitals-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.vchip { background: #f9fafb; border: 0.5px solid #e5e7eb; border-radius: 6px; padding: 5px 10px; font-size: 12px; }
+.vchip span { font-weight: 500; }
+.vchip.danger span { color: #dc2626; }
+.vchip.warn span { color: #d97706; }
+.vchip.ok span { color: #059669; }
+.monitor { background: #060606; border-radius: 10px; padding: 10px 14px 8px; margin-bottom: 1rem; }
+.monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.monitor-title { font-size: 10px; font-family: monospace; letter-spacing: .05em; }
+.monitor-info { font-size: 10px; color: #4b5563; font-family: monospace; }
+canvas { display: block; width: 100%; }
+.ecg-scale { display: flex; justify-content: space-between; margin-top: 4px; }
+.ecg-scale span { font-size: 9px; color: #4b5563; font-family: monospace; }
+.ecg-annotation { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 1rem; }
+.ann-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #6b7280; }
+.ann-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.step-tabs { display: flex; margin-bottom: 1rem; border: 0.5px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.step-tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 12px; color: #6b7280; background: #f9fafb; border-right: 0.5px solid #e5e7eb; cursor: default; }
+.step-tab:last-child { border-right: none; }
+.step-tab.active { background: #fff; color: #1a1a1a; font-weight: 500; }
+.step-tab.done { background: #d1fae5; color: #065f46; }
+.q-label { font-size: 13px; font-weight: 500; color: #111827; margin-bottom: 8px; }
+.options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1rem; }
+.opt-btn { background: #fff; border: 0.5px solid #d1d5db; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; text-align: left; color: #1a1a1a; display: flex; align-items: flex-start; gap: 8px; line-height: 1.45; }
+.opt-btn:hover:not(:disabled) { background: #f9fafb; }
+.opt-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.opt-btn.correct { border-color: #6ee7b7; background: #d1fae5; color: #065f46; }
+.opt-btn.incorrect { border-color: #fca5a5; background: #fee2e2; color: #991b1b; }
+.opt-letter { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 500; flex-shrink: 0; margin-top: 1px; }
+.opt-btn.correct .opt-letter { background: #6ee7b7; color: #065f46; }
+.opt-btn.incorrect .opt-letter { background: #fca5a5; color: #991b1b; }
+.fb { border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.6; margin-bottom: 1rem; border: 0.5px solid; }
+.fb-ok { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.fb-err { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.tx-box { background: #f8fafc; border: 0.5px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; margin-bottom: 1rem; }
+.tx-title { font-size: 12px; font-weight: 500; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .04em; }
+.tx-step { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+.tx-num { width: 20px; height: 20px; border-radius: 50%; background: #3b82f6; color: #fff; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.tx-content { font-size: 13px; line-height: 1.5; flex: 1; }
+.tx-dose { font-weight: 500; color: #1e40af; }
+.tx-note { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.tx-warn { background: #fef3c7; border: 0.5px solid #fcd34d; border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #92400e; margin-top: 8px; }
+.nav-row { display: flex; gap: 8px; margin-top: 1rem; }
+.btn { padding: 8px 18px; border-radius: 8px; border: 0.5px solid #d1d5db; background: #fff; color: #1a1a1a; font-size: 13px; cursor: pointer; }
+.btn:hover { background: #f9fafb; }
+.btn-primary { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.btn-primary:hover { background: #1e40af; }
+.final { text-align: center; padding: 2rem 0; }
+.final-score { font-size: 52px; font-weight: 500; margin-bottom: 6px; }
+.final-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; text-align: left; }
+.final-card { background: #f9fafb; border-radius: 8px; padding: 10px 12px; }
+.final-card-label { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+.final-card-val { font-size: 18px; font-weight: 500; }
+</style>
+</head>
+<body>
+<h1>Bradiarritmias Pediátricas <span class="badge bi" style="vertical-align:middle;margin-left:4px">PALS 2025</span></h1>
+<div class="subtitle">Hospital Simulado · Universidad de La Sabana · Módulo 2 — Bradiarritmias del algoritmo PALS</div>
+<div class="pals-concept">
+  <i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
+  <span><strong>Criterio PALS 2025:</strong> La bradicardia requiere intervención solo si hay compromiso cardiopulmonar: FC &lt; 60 lpm <em>más</em> hipotensión, mala perfusión o alteración de conciencia. La FC aislada no es criterio de tratamiento.</span>
+</div>
+<div class="prog-row">
+  <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+  <div class="prog-label" id="prog-label">Caso 1 de 4</div>
+  <div class="score-pill" id="score-pill">Puntos: 0/0</div>
+</div>
+<div id="main"></div>
+<script>
+const CASES=[
+{id:1,emoji:"🧒",name:"Andrés",age:"7 años",weight:22,
+concept:"Bradicardia sinusal — cuándo NO intervenir",
+historia:"Niño con síncope durante una misa. Estaba de pie, hacía calor, sin comer desde la mañana. Se recuperó en 30 segundos. Sin antecedentes cardíacos. Lúcido, pálido, bien perfundido, sin signos de bajo gasto.",
+vitals:{fc:"52",fc_cls:"warn",spo2:"99",spo2_cls:"ok",pa:"92/58",pa_cls:"ok",fr:"18",fr_cls:"ok"},
+ecgConfig:{type:"sinus_brady",hr:52,label:"BRADICARDIA SINUSAL — 52 lpm",lcolor:"#00ff41",color:"#00ff41",gridColor:"#1a3a1a",
+annotations:[{color:"#facc15",text:"Onda P sinusal (+) antes de cada QRS"},{color:"#60a5fa",text:"PR normal — conducción AV íntegra"},{color:"#a78bfa",text:"QRS angosto, morfología normal"}]},
+step1:{q:"FC 52 lpm en niño lúcido y bien perfundido. ¿Cuál es la interpretación correcta según PALS 2025?",
+opts:[
+{t:"Bradicardia sinusal sin compromiso cardiopulmonar — no requiere intervención farmacológica",ok:true,fb:"Correcto. PALS 2025: la bradicardia requiere tratamiento solo si hay FC < 60 lpm MÁS compromiso cardiopulmonar (hipotensión, mala perfusión, alteración de conciencia). Andrés cumple el criterio de FC pero no tiene compromiso — atropina y marcapaso no están indicados."},
+{t:"Bradicardia sintomática — iniciar atropina 0.02 mg/kg IV porque FC < 60 lpm",ok:false,fb:"El umbral PALS 2025 no es solo FC < 60 lpm. Requiere FC < 60 MÁS compromiso cardiopulmonar. Sin hipotensión ni mala perfusión, la atropina no está indicada — y en dosis < 0.1 mg puede causar bradicardia paradójica."},
+{t:"Bloqueo AV de primer grado — PR prolongado que requiere evaluación urgente",ok:false,fb:"El bloqueo AV 1° muestra PR > 0.20 seg. Aquí el PR es normal. Este ECG muestra bradicardia sinusal pura — cada P conduce normalmente a un QRS sin retraso."},
+{t:"Ritmo de escape ventricular — indicación de marcapaso transcutáneo inmediato",ok:false,fb:"El ritmo de escape ventricular muestra QRS ancho sin P precedente. Aquí hay P sinusal antes de cada QRS con PR normal — es bradicardia sinusal, no escape ventricular."}
+]},
+step2:{q:"Confirmada bradicardia sinusal benigna post-vasovagal. ¿Cuál es el manejo correcto?",
+opts:[
+{t:"Posición supina, piernas elevadas, hidratación y ECG de 12 derivaciones para descartar causa eléctrica",ok:true,fb:"Correcto. Síncope vasovagal: posición supina mejora el retorno venoso. ECG de 12 derivaciones es obligatorio en primer episodio de síncope para descartar QT largo, WPW, Brugada. Hidratación si hay deshidratación. La FC se normaliza con la causa corregida."},
+{t:"Atropina 0.02 mg/kg IV + observación 6 horas en urgencias",ok:false,fb:"La atropina en bradicardia sin compromiso hemodinámico no tiene indicación en PALS 2025. Puede causar taquicardia, sequedad, visión borrosa. Tratar la causa (posición, hidratación), no la cifra de FC."},
+{t:"Marcapaso transcutáneo urgente dado que FC < 60 lpm",ok:false,fb:"El marcapaso es para bradicardia refractaria a atropina con compromiso, o bloqueo AV completo sintomático. Andrés no tiene compromiso hemodinámico — marcapaso no indicado."},
+{t:"Epinefrina 0.01 mg/kg IV y preparar desfibrilador por riesgo de paro",ok:false,fb:"La epinefrina en bradicardia es para paro cardíaco (FC < 60 sin perfusión + RCP en curso) o bradicardia refractaria a atropina con colapso. Andrés está lúcido y bien perfundido."}
+],
+treatment:{title:"Bradicardia sinusal sin compromiso — PALS 2025",
+steps:[
+{n:1,text:"Medidas físicas",dose:"Posición supina + piernas elevadas",note:"Mejora retorno venoso, normaliza FC. Ambiente fresco, aflojar ropa."},
+{n:2,text:"Hidratación",dose:"VO si tolera · IV 10–20 mL/kg SSN si hipotensión",note:"Solo si hay deshidratación asociada."},
+{n:3,text:"ECG 12 derivaciones",dose:"Obligatorio en primer síncope pediátrico",note:"Descartar QT largo, WPW, Brugada, bloqueo AV."},
+{n:4,text:"Criterio de intervención",dose:"FC < 60 lpm + compromiso cardiopulmonar → atropina",note:"Sin compromiso: observación y estudio ambulatorio. Sin atropina."}
+],warn:"Regla PALS 2025: FC < 60 lpm aislada NO es indicación de atropina. El criterio es FC < 60 MÁS compromiso cardiopulmonar."}}
+},
+{id:2,emoji:"👶",name:"Sofía",age:"4 meses",weight:6,
+concept:"Bradicardia por hipoxia — tratar la causa antes que el ritmo",
+historia:"Lactante con bronquiolitis severa en UCI, con cánula de alto flujo FiO₂ 65%. Durante la succión de secreciones la FC bajó a 38 lpm. La bebé está pálida-grisácea, con esfuerzo respiratorio marcado. SpO₂ 81%.",
+vitals:{fc:"38",fc_cls:"danger",spo2:"81",spo2_cls:"danger",pa:"58/32",pa_cls:"danger",fr:"68",fr_cls:"danger"},
+ecgConfig:{type:"sinus_brady",hr:38,label:"BRADICARDIA SEVERA — 38 lpm",color:"#ff6644",gridColor:"#2a1000",
+annotations:[{color:"#f87171",text:"FC < 60 con compromiso cardiopulmonar"},{color:"#facc15",text:"Ritmo sinusal — origen en hipoxia"},{color:"#f97316",text:"SpO₂ 81% — causa identificable"}]},
+step1:{q:"Bradicardia 38 lpm + SpO₂ 81% + hipotensión en lactante con bronquiolitis. ¿Cuál es la acción prioritaria?",
+opts:[
+{t:"Optimizar vía aérea y oxigenación de inmediato — la bradicardia es consecuencia de la hipoxia",ok:true,fb:"Correcto. PALS 2025 establece explícitamente: en niños, la causa más frecuente de bradicardia grave es la hipoxia. La primera acción es tratar la causa. Dar atropina sin corregir SpO₂ 81% es inútil — la bradicardia regresará. Reposicionar vía aérea, optimizar O₂, considerar bolsa-mascarilla."},
+{t:"Atropina 0.02 mg/kg IV de inmediato — es el fármaco de primera línea en bradicardia con compromiso",ok:false,fb:"La atropina es primera línea farmacológica, pero PALS 2025 es claro: si la bradicardia es por hipoxia, primero tratar la hipoxia. Dar atropina con SpO₂ 81% sin corregir la causa es tratar el síntoma — la bradicardia volverá."},
+{t:"Desfibrilación 2 J/kg — bradicardia severa con compromiso requiere choque eléctrico",ok:false,fb:"Error crítico. La desfibrilación es para FV y TVSP. La bradicardia sinusal no responde a la desfibrilación — aplicar un choque puede inducir FV. La intervención es tratar la causa (hipoxia) y luego farmacología si persiste."},
+{t:"Marcapaso transcutáneo inmediato — FC 38 con compromiso es indicación absoluta",ok:false,fb:"El marcapaso está en el algoritmo, pero después de tratar la causa y la atropina. PALS 2025: en bradicardia por hipoxia, el marcapaso sin corregir la hipoxia es ineficaz — el miocardio hipóxico no responde bien a la estimulación eléctrica."}
+]},
+step2:{q:"Optimizaste O₂. SpO₂ sube a 90% pero FC persiste en 44 lpm con hipotensión. ¿Cuál es el siguiente paso?",
+opts:[
+{t:"Atropina 0.02 mg/kg IV/IO (mínimo 0.1 mg) y evaluar necesidad de intubación",ok:true,fb:"Correcto — PALS 2025: bradicardia con compromiso persistente a pesar de mejorar la oxigenación → atropina 0.02 mg/kg IV/IO. Dosis mínima 0.1 mg (dosis menores pueden causar bradicardia paradójica). Si no hay respuesta: epinefrina en infusión. Si ventilación insuficiente con alto flujo: considerar intubación."},
+{t:"Epinefrina 0.01 mg/kg IV en bolo — más potente que la atropina",ok:false,fb:"La epinefrina en bolus es para paro cardíaco. En bradicardia con pulso y compromiso, PALS 2025 ubica atropina primero, luego epinefrina en infusión si la atropina falla. El bolus en bradicardia con pulso no es el paso inicial."},
+{t:"Cardioversión sincronizada 0.5 J/kg — el compromiso hemodinámico justifica el choque",ok:false,fb:"La cardioversión es para taquiarritmias con pulso, no para bradicardia. No tiene efecto terapéutico en bradicardia sinusal y puede precipitar FV."},
+{t:"Continuar observando — la SpO₂ mejoró a 90% y la FC se normalizará sola",ok:false,fb:"FC 44 con PA 58/32 es bradicardia con compromiso cardiopulmonar confirmado. PALS 2025 indica intervención farmacológica. Observar en este contexto aumenta el riesgo de paro cardíaco."}
+],
+treatment:{title:"Bradicardia con compromiso cardiopulmonar — PALS 2025",
+steps:[
+{n:1,text:"Tratar la causa — siempre primero",dose:"Hipoxia → O₂ y vía aérea. Hipoglicemia → dextrosa.",note:"Causa más frecuente en pediatría: hipoxia. Corregir antes de cualquier fármaco."},
+{n:2,text:"Atropina IV/IO",dose:"0.02 mg/kg · mín 0.1 mg · máx 0.5 mg (lactante) / 1 mg (niño)",note:"Puede repetirse una vez. Dosis < 0.1 mg: riesgo de bradicardia paradójica."},
+{n:3,text:"Epinefrina IV/IO en infusión",dose:"0.03–0.2 mcg/kg/min — titular al efecto",note:"Si atropina insuficiente o causa es hipotensión refractaria."},
+{n:4,text:"Marcapaso transcutáneo",dose:"FC objetivo 60–80 lpm. Con sedoanalgesia.",note:"Bradicardia refractaria a farmacología o bloqueo AV completo sintomático."},
+{n:5,text:"RCP si FC < 60 con mala perfusión",dose:"Iniciar compresiones sin esperar asistolia",note:"PALS 2025: FC < 60 + sin perfusión efectiva → RCP. No esperar paro completo."}
+],warn:"En bradicardia pediátrica: hipoxia es la causa hasta no probar lo contrario. Tratar siempre la causa antes del fármaco."}}
+},
+{id:3,emoji:"🧒",name:"Valentina",age:"8 años",weight:28,
+concept:"Bloqueo AV segundo grado — Mobitz I vs Mobitz II",
+historia:"Escolar con fiebre, artralgias y eritema en mejillas desde hace 2 semanas. ECG de rutina solicitado por el pediatra. La niña está asintomática, con buena perfusión. El ECG muestra PR que se va alargando progresivamente hasta que una P no conduce y el ciclo reinicia.",
+vitals:{fc:"58",fc_cls:"warn",spo2:"98",spo2_cls:"ok",pa:"96/60",pa_cls:"ok",fr:"20",fr_cls:"ok"},
+ecgConfig:{type:"mobitz1",hr:58,label:"BLOQUEO AV 2° GRADO — 58 lpm",color:"#00ff41",gridColor:"#1a3a1a",
+annotations:[{color:"#facc15",text:"PR se alarga progresivamente — Wenckebach"},{color:"#f87171",text:"Una P cae sin QRS → pausa → reinicio"},{color:"#60a5fa",text:"QRS angosto — bloqueo suprahisiano"}]},
+step1:{q:"PR que se alarga progresivamente hasta que una P no conduce, luego reinicia. ¿Cuál es el diagnóstico?",
+opts:[
+{t:"Bloqueo AV de segundo grado Mobitz I (Wenckebach) — suprahisiano",ok:true,fb:"Correcto. Wenckebach: PR se alarga progresivamente hasta que una P no conduce → pausa → reinicio del ciclo. El RR se acorta antes del bloqueo. Ubicación: nodo AV (suprahisiano). QRS angosto confirma el nivel suprahisiano. En niña con fiebre y artritis: pensar en LES o fiebre reumática."},
+{t:"Bloqueo AV de segundo grado Mobitz II — más peligroso, requiere marcapaso",ok:false,fb:"Mobitz II: PR constante con caída súbita de QRS sin alargamiento previo. Aquí el PR se alarga progresivamente — eso es Wenckebach (Mobitz I). La distinción es crucial: Mobitz II tiene mayor riesgo de progresar a bloqueo completo."},
+{t:"Bloqueo AV de tercer grado — P y QRS completamente disociados",ok:false,fb:"En bloqueo de tercer grado ninguna P conduce y P y QRS son completamente independientes. Aquí la mayoría de P conducen a QRS — solo una por ciclo es bloqueada. Es bloqueo parcial (segundo grado)."},
+{t:"Extrasístoles auriculares bloqueadas — variante benigna sin relación con bloqueo AV",ok:false,fb:"Las extrasístoles auriculares bloqueadas son P prematuras que no conducen. Aquí las P son regulares y el PR se alarga progresivamente — patrón de Wenckebach, no extrasistolia."}
+]},
+step2:{q:"Mobitz I en niña asintomática con sospecha de LES y buena perfusión. ¿Cuál es el manejo?",
+opts:[
+{t:"Estudio etiológico (anti-Ro/SS-A, complemento), monitoreo ECG y evaluación por reumatología — sin intervención antiarrítmica urgente",ok:true,fb:"Correcto. Mobitz I sin compromiso hemodinámico no requiere atropina ni marcapaso de urgencia. Valentina está asintomática y bien perfundida. Manejo etiológico: anticuerpos de LES, evaluación por reumatología y cardiología. El Mobitz I por LES puede responder a corticosteroides si es agudo."},
+{t:"Atropina 0.02 mg/kg IV — todo bloqueo AV de segundo grado requiere tratamiento farmacológico",ok:false,fb:"La atropina está indicada en bradicardia CON compromiso cardiopulmonar. Valentina está asintomática y bien perfundida — no hay indicación farmacológica urgente. El Mobitz I sin compromiso se maneja con estudio de la causa."},
+{t:"Marcapaso transcutáneo urgente — el Mobitz I puede progresar a bloqueo completo",ok:false,fb:"El Mobitz I tiene bajo riesgo de progresión a bloqueo completo (a diferencia de Mobitz II). Sin compromiso hemodinámico, el marcapaso no está indicado. Monitoreo y estudio etiológico son el paso correcto."},
+{t:"Amiodarona 5 mg/kg IV — antiarrítmico de amplio espectro para bloqueo AV",ok:false,fb:"Error peligroso: la amiodarona enlentece la conducción AV y puede empeorar el bloqueo o precipitar bloqueo completo. Está contraindicada en bloqueo AV sin marcapaso activo."}
+],
+treatment:{title:"Bloqueo AV segundo grado — Mobitz I vs II",
+steps:[
+{n:1,text:"Mobitz I (Wenckebach) — suprahisiano",dose:"PR progresivo → P bloqueada → reinicio. QRS angosto.",note:"Menor riesgo de progresar a bloqueo completo. Responde a atropina si hay compromiso."},
+{n:2,text:"Mobitz II — infrahisiano",dose:"PR constante → QRS cae súbito sin aviso. QRS puede ser ancho.",note:"Mayor riesgo de progresar a bloqueo completo. Atropina menos efectiva. Marcapaso más frecuente."},
+{n:3,text:"Sin compromiso hemodinámico",dose:"Estudio etiológico + monitoreo ECG continuo",note:"LES → anti-Ro. Lyme → serología. Fármacos → suspender. Fiebre reumática → ASTO."},
+{n:4,text:"Con compromiso hemodinámico",dose:"Atropina → epinefrina infusión → marcapaso",note:"Mobitz I responde bien a atropina. Mobitz II puede necesitar marcapaso directamente."}
+],warn:"Contraindicados en bloqueo AV: amiodarona · verapamil · diltiazem · adenosina · digoxina. Todos agravan el bloqueo."}}
+},
+{id:4,emoji:"👶",name:"Nicolás",age:"3 días",weight:3.4,
+concept:"Bloqueo AV completo — disociación AV total, marcapaso urgente",
+historia:"Neonato cuya madre tiene LES con anticuerpos anti-Ro/SS-A positivos. Al examen en neonatología: cianosis central, FC 45 lpm en monitor, llenado capilar 4 segundos. ECG: ondas P a 120 lpm y QRS a 45 lpm completamente independientes.",
+vitals:{fc:"45",fc_cls:"danger",spo2:"82",spo2_cls:"danger",pa:"52/28",pa_cls:"danger",fr:"62",fr_cls:"danger"},
+ecgConfig:{type:"complete_block",hr:45,label:"BLOQUEO AV COMPLETO — 45 lpm",color:"#ff4444",gridColor:"#2a0000",
+annotations:[{color:"#f87171",text:"P regulares — ritmo auricular 120 lpm"},{color:"#facc15",text:"QRS ancho — ritmo ventricular 45 lpm (escape)"},{color:"#f97316",text:"Disociación AV total — ninguna relación P-QRS"}]},
+step1:{q:"P a 120 lpm y QRS a 45 lpm sin relación entre sí. Neonato con madre anti-Ro positiva. ¿Diagnóstico y causa?",
+opts:[
+{t:"Bloqueo AV completo congénito — anticuerpos anti-Ro maternos dañaron el sistema de conducción fetal",ok:true,fb:"Correcto. Bloqueo AV completo congénito: se asocia en 60–70% a anticuerpos anti-Ro/SS-A y anti-La/SS-B maternos (LES, Sjögren). Los anticuerpos cruzan la placenta y dañan el nodo AV y el haz de His durante el segundo trimestre. El bloqueo generalmente es permanente y requiere evaluación para marcapaso definitivo."},
+{t:"Bradicardia sinusal neonatal — FC 45 lpm puede ser normal en neonatos en sueño profundo",ok:false,fb:"FC 45 con cianosis, llenado 4 seg y PA 52/28 no es normal. Además la bradicardia sinusal tiene P precediendo a cada QRS — aquí hay disociación AV completa (P y QRS independientes), lo que descarta bradicardia sinusal."},
+{t:"Taquicardia de la unión neonatal (JET) — QRS angosto sin P visible",ok:false,fb:"La JET produce FC ventricular rápida. Aquí el QRS es lento (45 lpm) con P más rápidas (120 lpm) — patrón opuesto. Y el QRS es ancho (escape ventricular), no el QRS angosto de la JET."},
+{t:"Bloqueo AV de segundo grado Mobitz II — algunas P no conducen",ok:false,fb:"Mobitz II muestra PR constante con caída súbita de QRS — algunas P aún conducen. En bloqueo de tercer grado ninguna P conduce y la relación P-QRS es aleatoria. La disociación total descarta bloqueo parcial."}
+]},
+step2:{q:"Bloqueo AV completo congénito con compromiso hemodinámico severo. ¿Cuál es el manejo de urgencia?",
+opts:[
+{t:"Atropina IV + epinefrina en infusión + marcapaso transcutáneo urgente + traslado a cardiología pediátrica",ok:true,fb:"Correcto. Bloqueo AV completo con compromiso es emergencia. Atropina (efecto limitado en bloqueo infrahisiano pero se intenta). Epinefrina en infusión para aumentar la FC del escape ventricular. Marcapaso transcutáneo como puente mientras se accede a marcapaso transvenoso temporal. Traslado urgente para evaluación de marcapaso definitivo."},
+{t:"Observación y ecocardiograma ambulatorio — el bloqueo congénito se resuelve espontáneamente",ok:false,fb:"El bloqueo AV completo congénito rara vez se resuelve espontáneamente. Con FC 45, SpO₂ 82% y PA 52/28 hay compromiso severo — la observación expone al neonato a riesgo de paro."},
+{t:"Adenosina 0.1 mg/kg IV — puede restablecer la conducción AV bloqueada",ok:false,fb:"La adenosina bloquea el nodo AV — empeoraría dramáticamente un bloqueo AV completo. Está absolutamente contraindicada en bloqueo AV de segundo y tercer grado sin marcapaso activo."},
+{t:"Cardioversión sincronizada 0.5 J/kg — el compromiso hemodinámico es la indicación",ok:false,fb:"La cardioversión no tiene efecto en bloqueo AV. El problema es la conducción interrumpida, no una taquiarritmia. La cardioversión sincronizada requiere QRS identificable y no modifica el bloqueo de conducción."}
+],
+treatment:{title:"Bloqueo AV completo — PALS 2025",
+steps:[
+{n:1,text:"Atropina IV/IO",dose:"0.02 mg/kg (mín 0.1 mg). Efecto variable en bloqueo infrahisiano.",note:"Más efectivo en bloqueo suprahisiano (QRS angosto). QRS ancho → respuesta limitada."},
+{n:2,text:"Epinefrina en infusión IV/IO",dose:"0.03–0.2 mcg/kg/min — titular",note:"Aumenta FC del marcapasos de escape ventricular mientras se prepara marcapaso."},
+{n:3,text:"Marcapaso transcutáneo",dose:"FC 60–80 lpm en neonato. Sedoanalgesia obligatoria.",note:"Confirmar captura eléctrica Y mecánica (pulso palpable). Puente al marcapaso transvenoso."},
+{n:4,text:"Marcapaso transvenoso → definitivo",dose:"Indicado en bloqueo AV completo sintomático",note:"Bloqueo congénito anti-Ro: generalmente permanente → evaluar marcapaso definitivo."},
+{n:5,text:"Tratamiento etiológico",dose:"Anti-Ro/La: corticosteroides prenatales (prevención). Lyme: antibióticos. Fármacos: suspender.",note:"Corticosteroides postnatales no revierten el bloqueo congénito ya establecido."}
+],warn:"Contraindicados en bloqueo AV sin marcapaso activo: adenosina · amiodarona · verapamil · diltiazem · digoxina."}}
+}
+];
+
+let caseIdx=0,step=1,scores={correct:0,total:0},stepDone={1:false,2:false},ecgAnimId=null,ecgPhase=0;
+
+function updateProgress(){
+  const total=CASES.length*2,done=caseIdx*2+(step-1)+(stepDone[step]?1:0);
+  document.getElementById('prog').style.width=Math.round(done/total*100)+'%';
+  document.getElementById('prog-label').textContent='Caso '+(caseIdx+1)+' de '+CASES.length;
+  document.getElementById('score-pill').textContent='Puntos: '+scores.correct+'/'+scores.total;
+}
+
+function drawECG(c){
+  if(ecgAnimId)cancelAnimationFrame(ecgAnimId);
+  const canvas=document.getElementById('ecg-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d'),cfg=c.ecgConfig;
+  function frame(){
+    const W=canvas.offsetWidth||740,H=90;
+    canvas.width=W;ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle=cfg.gridColor;ctx.lineWidth=0.5;
+    for(let x=0;x<W;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    ctx.strokeStyle=cfg.color;ctx.lineWidth=1.8;ctx.beginPath();
+    ecgPhase=(ecgPhase+1.6)%W;
+    for(let x=0;x<W;x++){
+      const t=((x+ecgPhase)%W)/W;let y=H/2;
+      if(cfg.type==='sinus_brady'){
+        const beats=cfg.hr/60*2.2,b=(t*beats)%1;
+        if(b<.06)y=H/2-5;
+        else if(b<.10)y=H/2-2;
+        else if(b<.14)y=H/2-22;
+        else if(b<.18)y=H/2+8;
+        else if(b<.22)y=H/2-2;
+        else if(b>.30&&b<.44)y=H/2-4*Math.sin((b-.30)*Math.PI/.14);
+        else y=H/2;
+      }else if(cfg.type==='mobitz1'){
+        const cycleT=(t*1.3)%1;
+        const beats3=[0,.22,.42],prs=[.06,.10,.15];
+        let drawn=false;
+        for(let i=0;i<3;i++){
+          const cs=beats3[i],pr=prs[i];
+          if(cycleT>=cs&&cycleT<cs+.20){
+            const local=cycleT-cs;
+            if(local<.04)y=H/2-5;
+            else if(local>=pr&&local<pr+.04)y=H/2-22;
+            else if(local>=pr+.04&&local<pr+.08)y=H/2+8;
+            else if(local>=pr+.08&&local<pr+.12)y=H/2-2;
+            else if(local>=pr+.16&&local<pr+.30)y=H/2-4*Math.sin((local-pr-.16)*Math.PI/.14);
+            else y=H/2;
+            drawn=true;break;
+          }
+        }
+        if(!drawn&&cycleT>=.62&&cycleT<.70)y=H/2-4*Math.sin((cycleT-.62)*Math.PI/.08);
+        else if(!drawn)y=H/2+(Math.random()*.5-.25);
+      }else if(cfg.type==='complete_block'){
+        const vb=(t*45/60*2.2)%1;
+        if(vb<.12)y=H/2+16*Math.sin(vb*Math.PI/.12);
+        else if(vb<.24)y=H/2-13*Math.sin((vb-.12)*Math.PI/.12);
+        else y=H/2;
+        const pb=(t*120/60*2.2+0.35)%1;
+        if(pb<.05)y-=5*Math.sin(pb*Math.PI/.05);
+      }
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ecgAnimId=requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function renderCase(){
+  const c=CASES[caseIdx];stepDone={1:false,2:false};step=1;updateProgress();
+  const vList=[{label:'FC',val:c.vitals.fc,unit:'lpm',cls:c.vitals.fc_cls},{label:'SpO₂',val:c.vitals.spo2,unit:'%',cls:c.vitals.spo2_cls},{label:'PA',val:c.vitals.pa,unit:'mmHg',cls:c.vitals.pa_cls},{label:'FR',val:c.vitals.fr,unit:'rpm',cls:c.vitals.fr_cls}];
+  document.getElementById('main').innerHTML=
+    '<div class="case-concept"><i class="ti ti-bulb" style="font-size:15px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i><span><strong>Concepto clave — caso '+(caseIdx+1)+':</strong> '+c.concept+'</span></div>'+
+    '<div class="case-card"><div class="case-header"><div class="case-avatar">'+c.emoji+'</div><div><div class="case-name">'+c.name+' &nbsp;<span class="badge bg">'+c.age+' · '+c.weight+' kg</span></div><div class="case-meta">Caso '+(caseIdx+1)+' de '+CASES.length+'</div></div></div><div class="case-text">'+c.historia+'</div><div class="vitals-row">'+vList.map(function(v){return '<div class="vchip '+v.cls+'"><span>'+v.val+'</span> '+v.unit+' '+v.label+'</div>';}).join('')+'</div></div>'+
+    '<div class="monitor"><div class="monitor-header"><div class="monitor-title" style="color:'+c.ecgConfig.color+'">'+c.ecgConfig.label+'</div><div class="monitor-info">25 mm/s · 10 mm/mV</div></div><canvas id="ecg-canvas" height="90"></canvas><div class="ecg-scale"><span>0</span><span>1 seg</span><span>2 seg</span><span>3 seg</span></div></div>'+
+    '<div class="ecg-annotation">'+c.ecgConfig.annotations.map(function(a){return '<div class="ann-item"><div class="ann-dot" style="background:'+a.color+'"></div><span>'+a.text+'</span></div>';}).join('')+'</div>'+
+    '<div class="step-tabs"><div class="step-tab active" id="tab1">1. Diagnóstico</div><div class="step-tab" id="tab2">2. Tratamiento</div></div>'+
+    '<div id="step-content"></div><div id="nav-row" class="nav-row"></div>';
+  setTimeout(function(){drawECG(c);},50);
+  renderStep();
+}
+
+function renderStep(){
+  const c=CASES[caseIdx],data=step===1?c.step1:c.step2;
+  const L=['A','B','C','D'];
+  document.getElementById('tab1').className='step-tab'+(step===1?' active':'')+(stepDone[1]?' done':'');
+  document.getElementById('tab2').className='step-tab'+(step===2?' active':'')+(stepDone[2]?' done':'');
+  document.getElementById('step-content').innerHTML=
+    '<div class="q-label">'+data.q+'</div>'+
+    '<div class="options">'+data.opts.map(function(o,i){return '<button class="opt-btn" id="opt'+i+'" onclick="handleOpt('+i+')"><span class="opt-letter">'+L[i]+'</span>'+o.t+'</button>';}).join('')+'</div>'+
+    '<div id="fb-area"></div>'+
+    (step===2&&stepDone[2]?renderTx(data.treatment):'');
+  renderNav();updateProgress();
+}
+
+function renderTx(tx){
+  if(!tx)return'';
+  var warn=tx.warn?'<div class="tx-warn"><strong>Importante:</strong> '+tx.warn+'</div>':'';
+  return '<div class="tx-box"><div class="tx-title">'+tx.title+'</div>'+tx.steps.map(function(s){return '<div class="tx-step"><div class="tx-num">'+s.n+'</div><div class="tx-content"><div>'+s.text+' — <span class="tx-dose">'+s.dose+'</span></div><div class="tx-note">'+s.note+'</div></div></div>';}).join('')+warn+'</div>';
+}
+
+function handleOpt(idx){
+  if(stepDone[step])return;
+  stepDone[step]=true;scores.total++;
+  const c=CASES[caseIdx],data=step===1?c.step1:c.step2,chosen=data.opts[idx];
+  if(chosen.ok)scores.correct++;
+  document.querySelectorAll('.opt-btn').forEach(function(b,i){b.disabled=true;if(data.opts[i].ok)b.classList.add('correct');});
+  document.getElementById('opt'+idx).classList.add(chosen.ok?'correct':'incorrect');
+  document.getElementById('fb-area').innerHTML='<div class="fb '+(chosen.ok?'fb-ok':'fb-err')+'"><strong>'+(chosen.ok?'Correcto':'No es la mejor opción')+':</strong> '+chosen.fb+'</div>'+(step===2?renderTx(data.treatment):'');
+  document.getElementById('tab'+step).className='step-tab done'+(step===1?' active':'');
+  renderNav();updateProgress();
+}
+
+function renderNav(){
+  var nav=document.getElementById('nav-row');if(!nav)return;
+  var isLast=caseIdx===CASES.length-1,html='<div style="display:flex;gap:8px;width:100%">';
+  if(step===1&&stepDone[1])html+='<button class="btn btn-primary" style="flex:1" onclick="goStep2()">Continuar → Tratamiento</button>';
+  else if(step===2&&stepDone[2]){
+    if(!isLast)html+='<button class="btn btn-primary" style="flex:1" onclick="nextCase()">Siguiente caso →</button>';
+    else html+='<button class="btn btn-primary" style="flex:1" onclick="showFinal()">Ver resultado final →</button>';
+  }
+  nav.innerHTML=html+'</div>';
+}
+
+function goStep2(){step=2;renderStep();var el=document.getElementById('step-tabs');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
+function nextCase(){caseIdx++;renderCase();window.scrollTo({top:0,behavior:'smooth'});}
+
+function showFinal(){
+  if(ecgAnimId)cancelAnimationFrame(ecgAnimId);
+  var pct=Math.round(scores.correct/scores.total*100);
+  var col=pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
+  var msg=scores.correct===scores.total?'Dominio completo del algoritmo PALS 2025 de bradiarritmias.':scores.correct>=6?'Muy bien. Revisa los puntos con error.':scores.correct>=4?'Buen intento. Repasa el criterio de intervención y los bloqueos AV.':'Necesitas repasar el algoritmo de bradicardia PALS 2025.';
+  document.getElementById('main').innerHTML=
+    '<div class="final">'+
+    '<div style="font-size:13px;color:#6b7280;margin-bottom:6px;">Resultado — Bradiarritmias PALS 2025</div>'+
+    '<div class="final-score" style="color:'+col+'">'+scores.correct+'/'+scores.total+'</div>'+
+    '<div style="font-size:14px;color:#6b7280;margin-bottom:1.5rem;">'+pct+'% · '+msg+'</div>'+
+    '<div class="final-grid">'+
+    '<div class="final-card"><div class="final-card-label">Respuestas correctas</div><div class="final-card-val" style="color:#1d4ed8">'+scores.correct+'/'+scores.total+'</div></div>'+
+    '<div class="final-card"><div class="final-card-label">Precisión</div><div class="final-card-val" style="color:'+col+'">'+pct+'%</div></div>'+
+    '<div class="final-card"><div class="final-card-label">Casos completados</div><div class="final-card-val">'+CASES.length+'/'+CASES.length+'</div></div>'+
+    '</div>'+
+    '<div style="background:#f9fafb;border-radius:10px;padding:1rem 1.25rem;text-align:left;margin-bottom:1.5rem;">'+
+    '<div style="font-size:12px;font-weight:500;color:#6b7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Arritmias evaluadas — algoritmo PALS 2025</div>'+
+    '<div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">'+
+    '<div>✓ <strong>Bradicardia sinusal benigna</strong> — FC &lt; 60 sin compromiso: no tratar</div>'+
+    '<div>✓ <strong>Bradicardia por hipoxia</strong> — tratar la causa antes que el ritmo</div>'+
+    '<div>✓ <strong>Bloqueo AV 2° Mobitz I</strong> — Wenckebach, suprahisiano, responde a atropina</div>'+
+    '<div>✓ <strong>Bloqueo AV completo</strong> — disociación AV total, marcapaso urgente</div>'+
+    '</div>'+
+    '<div style="margin-top:12px;padding:10px;background:#fee2e2;border-radius:8px;font-size:12px;color:#991b1b;">'+
+    '<strong>Regla de oro PALS 2025:</strong> Bradicardia requiere intervención solo si FC &lt; 60 MÁS compromiso cardiopulmonar. Causa más frecuente en pediatría: hipoxia — tratarla primero. Contraindicados en bloqueo AV: adenosina, amiodarona, verapamil, diltiazem.'+
+    '</div></div>'+
+    '<div style="display:flex;gap:8px;justify-content:center;"><button class="btn" onclick="restart()">Reiniciar módulo</button></div>'+
+    '</div>';
+  updateProgress();
+}
+
+function restart(){caseIdx=0;scores={correct:0,total:0};renderCase();window.scrollTo({top:0,behavior:'smooth'});}
+renderCase();
+</script>
+</body>
+</html>

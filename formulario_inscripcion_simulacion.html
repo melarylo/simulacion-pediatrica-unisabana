@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inscripción — Rotación de Simulación Pediátrica</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:30px 16px;}
+
+.card{background:#fff;border-radius:16px;padding:36px;width:100%;max-width:540px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+
+/* Header */
+.logo-wrap{text-align:center;margin-bottom:24px;}
+.logo-circle{width:64px;height:64px;background:#1e3a5f;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px;}
+.logo-title{font-size:18px;font-weight:700;color:#1e3a5f;}
+.logo-sub{font-size:12px;color:#6b7280;margin-top:2px;}
+
+/* Form */
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+.field input,.field select,.field textarea{width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:system-ui;transition:border-color .15s;background:#fafafa;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#1d4ed8;background:#fff;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field-hint{font-size:11px;color:#9ca3af;margin-top:4px;}
+
+/* Btn */
+.btn{width:100%;padding:13px;background:#1e3a5f;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;transition:background .15s;}
+.btn:hover{background:#1d4ed8;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Código generado */
+.codigo-wrap{display:none;text-align:center;padding:28px 20px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:12px;border:2px solid #1d4ed8;margin-top:20px;}
+.codigo-label{font-size:12px;font-weight:600;color:#1e40af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.codigo-val{font-size:52px;font-weight:800;color:#1e3a5f;letter-spacing:4px;margin-bottom:8px;font-family:monospace;}
+.codigo-name{font-size:14px;color:#6b7280;margin-bottom:16px;}
+.codigo-instrucciones{background:#fff;border-radius:8px;padding:12px 16px;text-align:left;font-size:13px;color:#374151;line-height:1.6;margin-bottom:16px;}
+.codigo-instrucciones strong{color:#1e3a5f;}
+
+/* Botones post-código */
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+.btn-print{padding:11px;background:#1e3a5f;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;}
+.btn-print:hover{background:#1d4ed8;}
+.btn-new{padding:11px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;font-size:13px;cursor:pointer;}
+.btn-new:hover{background:#f9fafb;}
+
+/* Estado envío */
+.status{font-size:12px;padding:8px 12px;border-radius:7px;margin-top:10px;text-align:center;}
+.status-ok{background:#d1fae5;color:#065f46;}
+.status-err{background:#fee2e2;color:#991b1b;}
+.status-warn{background:#fef3c7;color:#92400e;}
+.status-pending{background:#f3f4f6;color:#6b7280;}
+
+/* Sección admin */
+.admin-toggle{text-align:center;margin-top:20px;}
+.admin-link{font-size:11px;color:#9ca3af;cursor:pointer;text-decoration:underline;}
+.admin-panel{display:none;margin-top:16px;border-top:1px solid #e5e7eb;padding-top:16px;}
+.admin-panel h3{font-size:13px;font-weight:600;color:#374151;margin-bottom:10px;}
+.registro-item{background:#f9fafb;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
+.reg-codigo{font-weight:700;color:#1e3a5f;font-family:monospace;font-size:14px;}
+.reg-info{color:#6b7280;}
+.btn-admin{padding:8px 14px;background:#1e3a5f;color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;width:100%;margin-bottom:8px;}
+
+@media print {
+  body{background:#fff;padding:0;}
+  .card{box-shadow:none;border-radius:0;padding:20px;}
+  .form-section{display:none;}
+  .admin-toggle{display:none;}
+  .btn-row{display:none;}
+  .codigo-wrap{display:block!important;border:3px solid #1e3a5f;}
+  .status{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- LOGO -->
+  <div class="logo-wrap">
+    <div class="logo-circle">🏥</div>
+    <div class="logo-title">Hospital Simulado</div>
+    <div class="logo-sub">Universidad de La Sabana · Rotación de Simulación Pediátrica</div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div class="form-section" id="form-section">
+    <div class="field">
+      <label>Nombre completo</label>
+      <input type="text" id="nombre" placeholder="Escribe tu nombre completo">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Semestre académico</label>
+        <select id="semestre">
+          <option value="">Seleccionar...</option>
+          <option>1°</option><option>2°</option><option>3°</option><option>4°</option>
+          <option>5°</option><option>6°</option><option>7°</option><option>8°</option>
+          <option>9°</option><option>10°</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Grupo de rotación</label>
+        <select id="grupo">
+          <option value="">Seleccionar...</option>
+          <option value="1">Grupo 1</option>
+          <option value="2">Grupo 2</option>
+          <option value="3">Grupo 3</option>
+          <option value="4">Grupo 4</option>
+          <option value="5">Grupo 5</option>
+          <option value="6">Grupo 6</option>
+          <option value="7">Grupo 7</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Experiencia previa en simulación clínica</label>
+      <select id="experiencia">
+        <option value="">Seleccionar...</option>
+        <option value="ninguna">Ninguna</option>
+        <option value="basica">Básica (1–2 talleres previos)</option>
+        <option value="intermedia">Intermedia (3–5 talleres previos)</option>
+        <option value="avanzada">Avanzada (más de 5 talleres previos)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Correo institucional (opcional — para recibir tu código)</label>
+      <input type="email" id="correo" placeholder="usuario@unisabana.edu.co">
+      <div class="field-hint">No es obligatorio. Solo se usa para enviarte tu código de participante.</div>
+    </div>
+
+    <button class="btn" id="btn-inscribir" onclick="inscribir()" disabled>
+      Inscribirme y obtener mi código
+    </button>
+    <div id="status-form"></div>
+  </div>
+
+  <!-- CÓDIGO GENERADO -->
+  <div class="codigo-wrap" id="codigo-wrap">
+    <div class="codigo-label">Tu código de participante</div>
+    <div class="codigo-val" id="codigo-display">—</div>
+    <div class="codigo-name" id="codigo-name"></div>
+    <div class="codigo-instrucciones">
+      <strong>¿Para qué sirve este código?</strong><br>
+      Usa este código en todos los instrumentos de la rotación:<br>
+      · Quiz de conocimiento (S0 y S9)<br>
+      · Encuesta de autoconfianza (S0 y S9)<br>
+      · El docente lo anotará en la rúbrica de desempeño<br><br>
+      <strong>Tu nombre no aparecerá en ningún resultado publicado.</strong> El código garantiza tu anonimato en el estudio.
+    </div>
+    <div id="status-envio"></div>
+    <div class="btn-row">
+      <button class="btn-print" onclick="window.print()">🖨 Imprimir / Guardar</button>
+      <button class="btn-new" onclick="nuevaInscripcion()">Nuevo participante</button>
+    </div>
+  </div>
+
+  <!-- PANEL ADMIN -->
+  <div class="admin-toggle">
+    <span class="admin-link" onclick="toggleAdmin()">Panel docente</span>
+  </div>
+  <div class="admin-panel" id="admin-panel">
+    <h3>Registro de participantes — Solo docente</h3>
+    <input type="password" id="admin-pass" placeholder="Contraseña del docente"
+           style="width:100%;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:13px;margin-bottom:8px;">
+    <button class="btn-admin" onclick="verRegistros()">Ver registros del grupo</button>
+    <div id="admin-content"></div>
+  </div>
+
+</div><!-- /card -->
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const BIN_ID  = '6a60ddf5da38895dfe7fee60';
+const API_KEY = '$2a$10$yJBW6mob86NQpJ1uZ605EuNJnV3Znw/5Qbuloh1wS4cwb.UJBu9E2';
+const ADMIN_PASS = 'simulacion2026'; // Cambiar antes de usar
+
+// ── VALIDACIÓN ────────────────────────────────────────────────────────────
+function validar(){
+  const nombre  = document.getElementById('nombre').value.trim();
+  const semestre = document.getElementById('semestre').value;
+  const grupo   = document.getElementById('grupo').value;
+  const exp     = document.getElementById('experiencia').value;
+  document.getElementById('btn-inscribir').disabled =
+    !(nombre && semestre && grupo && exp);
+}
+
+['nombre','semestre','grupo','experiencia'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){
+    el.addEventListener('input', validar);
+    el.addEventListener('change', validar);
+  }
+});
+
+// ── GENERACIÓN DE CÓDIGO ──────────────────────────────────────────────────
+function generarCodigo(grupo, secuencial){
+  const n = String(secuencial).padStart(2,'0');
+  return `G${grupo}-${n}`;
+}
+
+// ── INSCRIPCIÓN ───────────────────────────────────────────────────────────
+async function inscribir(){
+  const nombre     = document.getElementById('nombre').value.trim();
+  const semestre   = document.getElementById('semestre').value;
+  const grupo      = document.getElementById('grupo').value;
+  const experiencia = document.getElementById('experiencia').value;
+  const correo     = document.getElementById('correo').value.trim();
+
+  const statusEl = document.getElementById('status-form');
+  statusEl.innerHTML = '<div class="status status-pending">Procesando inscripción...</div>';
+  document.getElementById('btn-inscribir').disabled = true;
+
+  let secuencial = 1;
+  let registros = [];
+
+  // Si JSONBin está configurado, obtener el número secuencial real
+  if(BIN_ID === 'NO_CONFIGURADO'){
+    try {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
+        headers:{'X-Master-Key': API_KEY}
+      });
+      const data = await res.json();
+      registros = data.record?.inscripciones || [];
+      // Contar participantes del mismo grupo para asignar secuencial
+      const delGrupo = registros.filter(r => r.grupo === grupo);
+      secuencial = delGrupo.length + 1;
+    } catch(e){
+      // Si falla, usar localStorage como fallback
+      const local = JSON.parse(localStorage.getItem('inscripciones')||'[]');
+      const delGrupo = local.filter(r=>r.grupo===grupo);
+      secuencial = delGrupo.length + 1;
+    }
+  } else {
+    // Sin JSONBin: usar localStorage
+    const local = JSON.parse(localStorage.getItem('inscripciones')||'[]');
+    const delGrupo = local.filter(r=>r.grupo===grupo);
+    secuencial = delGrupo.length + 1;
+  }
+
+  const codigo = generarCodigo(grupo, secuencial);
+  const timestamp = new Date().toISOString();
+
+  const registro = {
+    timestamp,
+    codigo,
+    nombre,
+    semestre,
+    grupo: `Grupo ${grupo}`,
+    grupo_num: grupo,
+    experiencia_previa: experiencia,
+    correo: correo || 'No proporcionado',
+    secuencial,
+  };
+
+  // Guardar en JSONBin o localStorage
+  if(BIN_ID === 'NO_CONFIGURADO'){
+    try{
+      registros.push(registro);
+      await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+        body: JSON.stringify({inscripciones: registros})
+      });
+    } catch(e){
+      guardarLocal(registro);
+    }
+  } else {
+    guardarLocal(registro);
+  }
+
+  // Mostrar código
+  mostrarCodigo(codigo, nombre, grupo);
+}
+
+function guardarLocal(registro){
+  const local = JSON.parse(localStorage.getItem('inscripciones')||'[]');
+  local.push(registro);
+  localStorage.setItem('inscripciones', JSON.stringify(local));
+}
+
+function mostrarCodigo(codigo, nombre, grupo){
+  document.getElementById('form-section').style.display='none';
+  const wrap = document.getElementById('codigo-wrap');
+  wrap.style.display='block';
+  document.getElementById('codigo-display').textContent = codigo;
+  document.getElementById('codigo-name').textContent =
+    `${nombre}  ·  Grupo ${grupo}`;
+
+  const envioEl = document.getElementById('status-envio');
+  if(BIN_ID === 'NO_CONFIGURADO'){
+    envioEl.innerHTML='<div class="status status-warn">⚠ JSONBin no configurado — el registro se guardó localmente en este dispositivo.</div>';
+  } else {
+    envioEl.innerHTML='<div class="status status-ok">✓ Inscripción registrada correctamente.</div>';
+  }
+}
+
+function nuevaInscripcion(){
+  document.getElementById('form-section').style.display='';
+  document.getElementById('codigo-wrap').style.display='none';
+  document.getElementById('status-form').innerHTML='';
+  ['nombre','semestre','grupo','experiencia','correo'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('btn-inscribir').disabled=true;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── PANEL ADMIN ────────────────────────────────────────────────────────────
+function toggleAdmin(){
+  const panel=document.getElementById('admin-panel');
+  panel.style.display=panel.style.display==='none'||!panel.style.display?'block':'none';
+}
+
+async function verRegistros(){
+  const pass=document.getElementById('admin-pass').value;
+  if(pass!==ADMIN_PASS){
+    document.getElementById('admin-content').innerHTML=
+      '<div class="status status-err">Contraseña incorrecta.</div>';
+    return;
+  }
+
+  let registros=[];
+  if(BIN_ID==='NO_CONFIGURADO'){
+    try{
+      const res=await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
+        headers:{'X-Master-Key':API_KEY}
+      });
+      const data=await res.json();
+      registros=data.record?.inscripciones||[];
+    } catch(e){
+      registros=JSON.parse(localStorage.getItem('inscripciones')||'[]');
+    }
+  } else {
+    registros=JSON.parse(localStorage.getItem('inscripciones')||'[]');
+  }
+
+  if(registros.length===0){
+    document.getElementById('admin-content').innerHTML=
+      '<div class="status status-warn">No hay inscripciones registradas aún.</div>';
+    return;
+  }
+
+  // Agrupar por grupo
+  const grupos={};
+  registros.forEach(r=>{
+    const g=r.grupo||`Grupo ${r.grupo_num}`;
+    if(!grupos[g]) grupos[g]=[];
+    grupos[g].push(r);
+  });
+
+  let html=`<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Total: ${registros.length} participante(s) registrado(s)</div>`;
+
+  Object.entries(grupos).sort().forEach(([g,regs])=>{
+    html+=`<div style="font-size:11px;font-weight:700;color:#1e3a5f;margin:8px 0 4px;text-transform:uppercase;">${g} — ${regs.length} participante(s)</div>`;
+    regs.sort((a,b)=>a.secuencial-b.secuencial).forEach(r=>{
+      const fecha=r.timestamp?new Date(r.timestamp).toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit'}):'—';
+      html+=`
+        <div class="registro-item">
+          <span class="reg-codigo">${r.codigo}</span>
+          <span class="reg-info">${r.nombre} · ${r.semestre} · ${fecha}</span>
+        </div>`;
+    });
+  });
+
+  // Botón exportar CSV
+  html+=`<button class="btn-admin" style="margin-top:12px;" onclick="exportarCSV()">⬇ Exportar a CSV</button>`;
+  document.getElementById('admin-content').innerHTML=html;
+
+  // Guardar para export
+  window._registrosExport=registros;
+}
+
+function exportarCSV(){
+  const regs=window._registrosExport||[];
+  if(!regs.length) return;
+  const headers=['codigo','nombre','semestre','grupo','experiencia_previa','correo','timestamp'];
+  const rows=regs.map(r=>headers.map(h=>`"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download=`inscripciones_simulacion_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Pre/Post Test — Simulación Pediátrica y Neonatal 2025</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f3f4f6; color: #111827; min-height: 100vh; }
+
+/* Header */
+.top-bar { background: #1d4ed8; color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+.top-bar h1 { font-size: 15px; font-weight: 500; }
+.top-bar .meta { font-size: 12px; opacity: .75; }
+.prog-wrap { background: rgba(255,255,255,.2); border-radius: 99px; height: 5px; width: 160px; overflow: hidden; }
+.prog-bar { height: 100%; background: #fff; border-radius: 99px; transition: width .4s; }
+
+/* Layout */
+.container { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+
+/* Intro card */
+.intro-card { background: #fff; border-radius: 12px; padding: 28px; margin-bottom: 20px; border: 0.5px solid #e5e7eb; }
+.intro-card h2 { font-size: 20px; font-weight: 600; color: #1d4ed8; margin-bottom: 8px; }
+.intro-card p { font-size: 14px; color: #374151; line-height: 1.65; margin-bottom: 8px; }
+.intro-note { background: #dbeafe; border: 0.5px solid #93c5fd; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #1e40af; margin-top: 12px; }
+
+/* Identificación */
+.id-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.id-grid label { font-size: 12px; font-weight: 500; color: #6b7280; margin-bottom: 4px; display: block; }
+.id-grid input, .id-grid select { width: 100%; padding: 8px 12px; border: 0.5px solid #d1d5db; border-radius: 8px; font-size: 14px; font-family: system-ui; }
+.id-grid input:focus, .id-grid select:focus { outline: none; border-color: #3b82f6; }
+
+/* Sección */
+.seccion-header { display: flex; align-items: center; gap: 10px; margin: 24px 0 12px; }
+.seccion-num { width: 32px; height: 32px; background: #1d4ed8; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.seccion-titulo { font-size: 14px; font-weight: 600; color: #1d4ed8; }
+.seccion-sub { font-size: 11px; color: #6b7280; }
+
+/* Pregunta */
+.q-card { background: #fff; border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; border: 0.5px solid #e5e7eb; }
+.q-header { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+.q-num { font-size: 11px; font-weight: 600; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+.q-tipo { font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 500; flex-shrink: 0; margin-top: 2px; }
+.tipo-c { background: #dbeafe; color: #1e40af; }
+.tipo-a { background: #d1fae5; color: #065f46; }
+.q-text { font-size: 14px; line-height: 1.6; color: #111827; flex: 1; }
+.caso-box { background: #fef3c7; border: 0.5px solid #fcd34d; border-radius: 8px; padding: 10px 13px; margin-bottom: 12px; font-size: 13px; line-height: 1.6; color: #92400e; }
+.opciones { display: flex; flex-direction: column; gap: 7px; }
+.opcion { display: flex; align-items: flex-start; gap: 10px; padding: 9px 13px; border: 0.5px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-size: 13px; line-height: 1.45; transition: background .1s, border-color .1s; }
+.opcion:hover { background: #f9fafb; border-color: #d1d5db; }
+.opcion input[type=radio] { flex-shrink: 0; margin-top: 2px; accent-color: #1d4ed8; }
+.opcion.seleccionada { border-color: #3b82f6; background: #eff6ff; }
+.letra { font-weight: 600; color: #6b7280; min-width: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* Botones */
+.btn-primary { background: #1d4ed8; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; display: block; width: 100%; margin-top: 24px; }
+.btn-primary:hover { background: #1e40af; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Resultado */
+.resultado { background: #fff; border-radius: 12px; padding: 32px; text-align: center; border: 0.5px solid #e5e7eb; }
+.resultado h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+.puntaje-grande { font-size: 60px; font-weight: 700; margin: 12px 0; }
+.resumen-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+.resumen-card { background: #f9fafb; border-radius: 8px; padding: 12px; }
+.resumen-card .val { font-size: 22px; font-weight: 600; color: #1d4ed8; }
+.resumen-card .lbl { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.detalle-tabla { width: 100%; border-collapse: collapse; text-align: left; margin-top: 20px; font-size: 13px; }
+.detalle-tabla th { background: #1d4ed8; color: #fff; padding: 8px 10px; font-weight: 500; }
+.detalle-tabla td { padding: 7px 10px; border-bottom: 0.5px solid #e5e7eb; }
+.detalle-tabla tr:nth-child(even) td { background: #f9fafb; }
+.enviando { color: #6b7280; font-size: 13px; margin-top: 12px; }
+.ok-msg { color: #065f46; background: #d1fae5; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 12px; }
+.err-msg { color: #991b1b; background: #fee2e2; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="h1">Quiz Pre/Post Test — Pediatría de Urgencias</div>
+    <div class="meta">Hospital Simulado · Universidad de La Sabana · PALS 2025 · NRP 2025</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:11px;opacity:.75;margin-bottom:4px" id="prog-label">0 / 20</div>
+    <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="intro-card">
+    <h2>Pre/Post Test — Simulación Clínica Pediátrica</h2>
+    <p>Este cuestionario evalúa tu conocimiento en los temas de la rotación de pediatría de urgencias. Consta de <strong>20 preguntas</strong> de selección múltiple con una sola respuesta correcta por pregunta. Las preguntas de reanimación pediátrica se basan en <strong>PALS 2025 AHA/AAP</strong> y las de reanimación neonatal en <strong>NRP 2025 AHA/AAP (9ª edición)</strong>.</p>
+    <p>Responde con honestidad — no hay respuestas trampa y el objetivo es conocer tu punto de partida real, no evaluarte para una nota.</p>
+    <div class="intro-note">Este instrumento es de carácter <strong>formativo</strong>. No afecta tu nota de rotación. Tus respuestas serán usadas exclusivamente con fines de investigación y retroalimentación.</div>
+
+    <div class="id-grid" style="margin-top:20px">
+      <div style="grid-column:1/-1">
+        <label>Nombre completo</label>
+        <input type="text" id="nombre" placeholder="Escribe tu nombre completo">
+      </div>
+      <div>
+        <label>Semestre</label>
+        <select id="semestre">
+          <option value="">Seleccionar...</option>
+          <option>1° semestre</option><option>2° semestre</option>
+          <option>3° semestre</option><option>4° semestre</option>
+          <option>5° semestre</option><option>6° semestre</option>
+          <option>7° semestre</option><option>8° semestre</option>
+          <option>9° semestre</option><option>10° semestre</option>
+        </select>
+      </div>
+      <div>
+        <label>Momento</label>
+        <select id="momento">
+          <option value="">Seleccionar...</option>
+          <option value="pre">Pre-test (Día 1)</option>
+          <option value="post">Post-test (Día 21)</option>
+        </select>
+      </div>
+      <div>
+        <label>Grupo de rotación</label>
+        <select id="grupo">
+          <option value="">Seleccionar...</option>
+          <option>Grupo 1</option><option>Grupo 2</option><option>Grupo 3</option>
+          <option>Grupo 4</option><option>Grupo 5</option><option>Grupo 6</option><option>Grupo 7</option>
+        </select>
+      </div>
+      <div>
+        <label>Experiencia previa en simulación</label>
+        <select id="experiencia">
+          <option value="">Seleccionar...</option>
+          <option value="ninguna">Ninguna</option>
+          <option value="basica">Básica (1-2 talleres)</option>
+          <option value="intermedia">Intermedia (3-5 talleres)</option>
+          <option value="avanzada">Avanzada (más de 5 talleres)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="quiz-area"></div>
+  <button class="btn-primary" id="btn-enviar" onclick="enviar()" disabled>Revisar y enviar respuestas</button>
+  <div id="resultado-area"></div>
+</div>
+
+<script>
+// ── PREGUNTAS ─────────────────────────────────────────────────────────────
+const SECCIONES = [
+  {
+    num: 1, titulo: "Reanimación Cardiopulmonar Pediátrica",
+    sub: "Algoritmo PALS 2025", preguntas: [
+      {
+        id: "q01", tipo: "C",
+        texto: "¿Cuál es la técnica de compresiones torácicas PREFERIDA en un lactante cuando hay 2 rescatadores disponibles, según PALS 2025?",
+        opciones: [
+          "Técnica de 2 dedos sobre el tercio inferior del esternón",
+          "Técnica de 2 pulgares con manos rodeando el tórax (encircling)",
+          "Técnica de talón de una mano sobre el esternón",
+          "Cualquiera de las anteriores con la misma eficacia"
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q02", tipo: "A",
+        caso: "Sebastián, 10 meses, 9 kg. En PCR. Monitor: fibrilación ventricular. Sin pulso. Ya conectaste el desfibrilador.",
+        texto: "¿Cuál es la dosis CORRECTA para la primera desfibrilación y el momento para administrar epinefrina?",
+        opciones: [
+          "2 J/kg primera descarga. Epinefrina antes de la primera descarga.",
+          "2 J/kg primera descarga. Epinefrina después de 2 intentos de desfibrilación o si no es posible desfibrilar de inmediato.",
+          "4 J/kg primera descarga. Epinefrina 0.01 mg/kg después de la primera descarga.",
+          "4 J/kg primera descarga. Epinefrina solo si persiste FV tras 3 descargas."
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q03", tipo: "A",
+        caso: "Laura, 7 meses, 7 kg. ROSC tras reanimación por PCR. SpO₂ 100% con FiO₂ 100%. FC 130 lpm. Temperatura 38.8 °C.",
+        texto: "¿Cuál de las siguientes acciones es INCORRECTA en el manejo post-ROSC según PALS 2025?",
+        opciones: [
+          "Titular el O₂ para mantener SpO₂ entre 94–99%",
+          "Mantener FiO₂ 100% hasta llegar a la UCIP para garantizar oxigenación máxima",
+          "Tratar la fiebre agresivamente para mantener temperatura < 37.5 °C",
+          "Administrar bolo reducido de 5–10 mL/kg si hay sospecha de disfunción miocárdica"
+        ],
+        correcta: 1,
+      },
+    ]
+  },
+  {
+    num: 2, titulo: "Taquiarritmias en Pediatría",
+    sub: "Identificación y manejo — PALS 2025", preguntas: [
+      {
+        id: "q04", tipo: "C",
+        texto: "En un lactante con taquicardia supraventricular (TSV) estable hemodinámicamente, ¿cuál es la PRIMERA línea de tratamiento según PALS 2025?",
+        opciones: [
+          "Adenosina 0.1 mg/kg IV en bolo rápido",
+          "Cardioversión sincronizada 0.5 J/kg",
+          "Maniobras vagales (reflejo de buceo con agua fría en cara)",
+          "Amiodarona 5 mg/kg IV en 20 minutos"
+        ],
+        correcta: 2,
+      },
+      {
+        id: "q05", tipo: "A",
+        caso: "Felipe, 8 años, 30 kg. Antecedente de miocarditis. Monitor: taquicardia con QRS ancho (0.12 seg), 185 lpm, disociación AV. PA 68/40 mmHg, pálido, diaforético.",
+        texto: "¿Cuál es el diagnóstico más probable y el tratamiento de elección?",
+        opciones: [
+          "TSV con aberrancia — adenosina 0.1 mg/kg IV",
+          "Taquicardia ventricular con pulso y compromiso hemodinámico — cardioversión sincronizada 0.5–1 J/kg",
+          "Taquicardia sinusal — tratar la causa subyacente",
+          "Taquicardia ventricular sin pulso — desfibrilación 2 J/kg"
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q06", tipo: "C",
+        texto: "¿Cuál de los siguientes hallazgos ECG es MÁS característico de la taquicardia supraventricular paroxística en un lactante, diferenciándola de la taquicardia sinusal?",
+        opciones: [
+          "Frecuencia cardíaca mayor de 150 lpm",
+          "QRS angosto con morfología normal",
+          "Frecuencia rígidamente regular sin variación, ondas P ausentes o invertidas post-QRS",
+          "Onda T invertida en derivaciones precordiales"
+        ],
+        correcta: 2,
+      },
+    ]
+  },
+  {
+    num: 3, titulo: "Bradiarritmias en Pediatría",
+    sub: "Algoritmo PALS 2025", preguntas: [
+      {
+        id: "q07", tipo: "C",
+        texto: "Según PALS 2025, ¿cuál es el criterio CORRECTO para iniciar tratamiento farmacológico en bradicardia pediátrica?",
+        opciones: [
+          "FC < 80 lpm en cualquier paciente pediátrico",
+          "FC < 60 lpm independientemente del estado clínico del paciente",
+          "FC < 60 lpm MÁS compromiso cardiopulmonar (hipotensión, mala perfusión o alteración de conciencia)",
+          "FC < 100 lpm en lactantes menores de 3 meses"
+        ],
+        correcta: 2,
+      },
+      {
+        id: "q08", tipo: "A",
+        caso: "Valentina, 5 meses, 6 kg. Bronquiolitis severa. Durante la succión de secreciones la FC baja a 36 lpm. SpO₂ 79%. Piel grisácea.",
+        texto: "¿Cuál debe ser la PRIMERA acción según el algoritmo PALS 2025?",
+        opciones: [
+          "Atropina 0.02 mg/kg IV de inmediato — primera línea farmacológica en bradicardia con compromiso",
+          "Optimizar la vía aérea y la oxigenación — la bradicardia es consecuencia de la hipoxia",
+          "Cardioversión sincronizada 0.5 J/kg",
+          "Marcapaso transcutáneo — FC < 60 con compromiso es indicación absoluta"
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q09", tipo: "C",
+        texto: "En el bloqueo AV completo (tercer grado), ¿cuál de los siguientes fármacos está CONTRAINDICADO sin marcapaso activo disponible?",
+        opciones: [
+          "Atropina",
+          "Epinefrina en infusión",
+          "Adenosina",
+          "Solución salina normal"
+        ],
+        correcta: 2,
+      },
+    ]
+  },
+  {
+    num: 4, titulo: "Reanimación Neonatal (NRP)",
+    sub: "Guías NRP 2025 AHA/AAP · 9ª edición", preguntas: [
+      {
+        id: "q10", tipo: "C",
+        texto: "Según el algoritmo NRP 2025, ¿cuál es el PRIMER paso al nacer un recién nacido de término con buen tono y llanto vigoroso?",
+        opciones: [
+          "Pinzar el cordón de inmediato y trasladar a la cuna de calor para evaluación completa",
+          "Iniciar el plan de manejo del cordón: deferir pinzamiento ≥ 60 seg, piel a piel con monitoreo de respiración y temperatura",
+          "Aspirar secreciones de boca y nariz antes de cualquier otra acción",
+          "Administrar vitamina K y realizar la evaluación del Apgar al minuto"
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q11", tipo: "A",
+        caso: "Recién nacido de 38 semanas. No respira al nacer, tono disminuido. Tras secar y estimular durante 30 segundos con cordón intacto: persiste sin respiración espontánea, FC 72 lpm por ECG. Se pinza el cordón.",
+        texto: "¿Cuál es la acción correcta y con qué concentración de O₂ se inicia la VPP según NRP 2025?",
+        opciones: [
+          "Iniciar VPP con FiO₂ 100% — garantiza máxima oxigenación desde el inicio",
+          "Intubar antes de ventilar — FC < 100 lpm con apnea es indicación de intubación inmediata",
+          "Iniciar VPP con FiO₂ 21% (aire ambiente) + oxímetro preductal + ECG para monitoreo de FC",
+          "Continuar estimulación 30 segundos más — la FC de 72 lpm puede mejorar sin ventilación"
+        ],
+        correcta: 2,
+      },
+    ]
+  },
+  {
+    num: 5, titulo: "Estrategia STABLE",
+    sub: "Estabilización del neonato crítico", preguntas: [
+      {
+        id: "q12", tipo: "C",
+        texto: "¿Cuál es la concentración de dextrosa que se administra como bolo inicial para corregir hipoglicemia sintomática en un neonato, según la estrategia STABLE?",
+        opciones: [
+          "Dextrosa al 5% — 10 mL/kg IV",
+          "Dextrosa al 10% — 2 mL/kg IV en bolo lento",
+          "Dextrosa al 50% — 1 mL/kg IV directo",
+          "Dextrosa al 25% — 4 mL/kg IV rápido"
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q13", tipo: "A",
+        caso: "Neonato de 35 semanas trasladado desde otro hospital. Temperatura 35.2 °C, glucemia 28 mg/dL, SpO₂ 88% con FiO₂ 21%, FC 190 lpm.",
+        texto: "Aplicando la estrategia STABLE, ¿cuál es el orden correcto de las intervenciones prioritarias?",
+        opciones: [
+          "Temperatura → Azúcar → Vía aérea → Presión arterial",
+          "Azúcar → Temperatura → Vía aérea → Presión arterial",
+          "Vía aérea → Azúcar → Temperatura → Presión arterial",
+          "Presión arterial → Temperatura → Azúcar → Vía aérea"
+        ],
+        correcta: 1,
+      },
+    ]
+  },
+  {
+    num: 6, titulo: "Falla Ventilatoria en Pediatría",
+    sub: "Reconocimiento y manejo inicial", preguntas: [
+      {
+        id: "q14", tipo: "C",
+        texto: "¿Cuál de las siguientes situaciones representa falla VENTILATORIA (no solo insuficiencia respiratoria hipoxémica)?",
+        opciones: [
+          "Neumonía con SpO₂ 88% que mejora con O₂ suplementario",
+          "Crisis asmática severa con PaCO₂ 65 mmHg y Ph 7.21 por agotamiento muscular",
+          "Bronquiolitis con taquipnea de 60 rpm y SpO₂ 91%",
+          "Laringotraqueobronquitis con estridor inspiratorio y SpO₂ 94%"
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q15", tipo: "A",
+        caso: "Andrés, 3 años. Crisis asmática. FR 52 rpm, uso intenso de músculos accesorios, quejido espiratorio, SpO₂ 84% con FiO₂ 60%, empieza a bradipnear.",
+        texto: "¿Cuál de las siguientes acciones es la MÁS apropiada en este momento?",
+        opciones: [
+          "Nebulización de salbutamol y esperar respuesta 20 minutos",
+          "Ventilación con BVM e intubación de secuencia rápida — signos de falla ventilatoria inminente",
+          "Aplicar CPAP y reevaluar en 30 minutos",
+          "Administrar dexametasona IV y observar evolución"
+        ],
+        correcta: 1,
+      },
+    ]
+  },
+  {
+    num: 7, titulo: "Punción Intraósea y Punción Lumbar",
+    sub: "Indicaciones, técnica y complicaciones", preguntas: [
+      {
+        id: "q16", tipo: "C",
+        texto: "¿Cuál es la indicación CORRECTA para la punción intraósea (IO) en pediatría según las guías actuales?",
+        opciones: [
+          "Solo cuando no hay ninguna vena periférica visible",
+          "Cuando no se logra acceso venoso periférico en 2 intentos o 90 segundos en paciente crítico",
+          "Exclusivamente en menores de 6 años, ya que en niños mayores la médula es grasa",
+          "Solo como último recurso, después de intentar acceso venoso central"
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q17", tipo: "A",
+        caso: "Paula, 2 años. PCR en curso. No se ha logrado acceso venoso periférico después de 2 intentos en 60 segundos.",
+        texto: "Se decide colocar aguja IO tibial. ¿Cómo se confirma la correcta posición de la aguja antes de administrar medicamentos?",
+        opciones: [
+          "La aguja queda fija sin soporte externo y se puede aspirar contenido de médula ósea o hay flujo libre de solución salina sin extravasación",
+          "Se confirma únicamente con radiografía de la tibia",
+          "Basta con que la aguja esté en el sitio anatómico correcto — no se necesita confirmación adicional",
+          "Se verifica solo si el paciente reporta dolor durante la infusión"
+        ],
+        correcta: 0,
+      },
+      {
+        id: "q18", tipo: "C",
+        texto: "¿Cuál de las siguientes es una CONTRAINDICACIÓN absoluta para punción lumbar en un niño?",
+        opciones: [
+          "Fiebre mayor de 39 °C",
+          "Plaquetas de 90.000/mm³",
+          "Signos clínicos de hipertensión endocraneana (papiledema, Cushing, Glasgow < 8)",
+          "Antecedente de parto pretérmino"
+        ],
+        correcta: 2,
+      },
+      {
+        id: "q19", tipo: "A",
+        caso: "Samuel, 18 meses. Sospecha de meningitis bacteriana. Se decide realizar punción lumbar. El niño está consciente, sin papiledema, con fontanela normotensa.",
+        texto: "¿Cuál es la posición CORRECTA para realizar la punción lumbar en este paciente?",
+        opciones: [
+          "Decúbito prono con hiperextensión lumbar",
+          "Decúbito lateral en posición fetal (rodillas al pecho, cuello flexionado) o sentado con flexión máxima de la columna",
+          "Decúbito supino con las piernas elevadas a 45 grados",
+          "Sentado derecho sin flexión — la flexión aumenta el riesgo de herniación"
+        ],
+        correcta: 1,
+      },
+      {
+        id: "q20", tipo: "A",
+        caso: "Durante una reanimación avanzada, el equipo logra colocar una vía IO en la tibia proximal de un lactante de 8 kg en PCR por asistolia.",
+        texto: "¿Cuál de los siguientes medicamentos NO puede administrarse por vía IO?",
+        opciones: [
+          "Epinefrina 0.01 mg/kg",
+          "Amiodarona 5 mg/kg",
+          "Solución salina normal 10 mL/kg",
+          "Todos los medicamentos anteriores SÍ pueden administrarse por vía IO"
+        ],
+        correcta: 3,
+      },
+    ]
+  },
+];
+
+// ── ESTADO ────────────────────────────────────────────────────────────────
+const respuestas = {};
+let totalPreguntas = 0;
+SECCIONES.forEach(s => totalPreguntas += s.preguntas.length);
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderQuiz() {
+  const area = document.getElementById('quiz-area');
+  area.innerHTML = '';
+  SECCIONES.forEach(sec => {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <div class="seccion-header">
+        <div class="seccion-num">${sec.num}</div>
+        <div>
+          <div class="seccion-titulo">${sec.titulo}</div>
+          <div class="seccion-sub">${sec.sub}</div>
+        </div>
+      </div>
+    `;
+    sec.preguntas.forEach((q, qi) => {
+      const qNum = contarHasta(sec.num, qi);
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      card.id = 'card-' + q.id;
+      let casoHTML = q.caso ? `<div class="caso-box"><strong>Caso clínico:</strong> ${q.caso}</div>` : '';
+      card.innerHTML = `
+        <div class="q-header">
+          <span class="q-num">Pregunta ${qNum}</span>
+          <span class="q-tipo ${q.tipo === 'C' ? 'tipo-c' : 'tipo-a'}">${q.tipo === 'C' ? 'Conocimiento' : 'Aplicación clínica'}</span>
+          <span class="q-text">${q.texto}</span>
+        </div>
+        ${casoHTML}
+        <div class="opciones" id="opts-${q.id}">
+          ${q.opciones.map((o, i) => `
+            <label class="opcion" id="opt-${q.id}-${i}">
+              <input type="radio" name="${q.id}" value="${i}" onchange="seleccionar('${q.id}', ${i}, this)">
+              <span class="letra">${['A','B','C','D'][i]}</span>
+              <span>${o}</span>
+            </label>
+          `).join('')}
+        </div>
+      `;
+      div.appendChild(card);
+    });
+    area.appendChild(div);
+  });
+}
+
+function contarHasta(secNum, qIdx) {
+  let n = 0;
+  for (let s of SECCIONES) {
+    if (s.num < secNum) n += s.preguntas.length;
+    else if (s.num === secNum) { n += qIdx + 1; break; }
+  }
+  return n;
+}
+
+function seleccionar(qid, idx, el) {
+  respuestas[qid] = idx;
+  // Resaltar opción seleccionada
+  document.querySelectorAll(`[id^="opt-${qid}-"]`).forEach(l => l.classList.remove('seleccionada'));
+  document.getElementById(`opt-${qid}-${idx}`).classList.add('seleccionada');
+  actualizarProg();
+}
+
+function actualizarProg() {
+  const n = Object.keys(respuestas).length;
+  document.getElementById('prog-label').textContent = `${n} / ${totalPreguntas}`;
+  document.getElementById('prog-bar').style.width = `${Math.round(n/totalPreguntas*100)}%`;
+  document.getElementById('btn-enviar').disabled = n < totalPreguntas ||
+    !document.getElementById('nombre').value.trim() ||
+    !document.getElementById('semestre').value ||
+    !document.getElementById('momento').value ||
+    !document.getElementById('grupo').value;
+}
+
+// Validar también cuando se llenan los campos de ID
+['nombre','semestre','momento','grupo','experiencia'].forEach(id => {
+  document.getElementById(id).addEventListener('change', actualizarProg);
+  document.getElementById(id).addEventListener('input', actualizarProg);
+});
+
+// ── ENVÍO ─────────────────────────────────────────────────────────────────
+async function enviar() {
+  const nombre   = document.getElementById('nombre').value.trim();
+  const semestre = document.getElementById('semestre').value;
+  const momento  = document.getElementById('momento').value;
+  const grupo    = document.getElementById('grupo').value;
+  const exp      = document.getElementById('experiencia').value;
+
+  if (!nombre || !semestre || !momento || !grupo) {
+    alert('Por favor completa todos los campos de identificación antes de enviar.');
+    return;
+  }
+
+  // Calcular resultados por sección
+  const porSeccion = {};
+  let totalCorrectas = 0;
+  SECCIONES.forEach(sec => {
+    let ok = 0;
+    sec.preguntas.forEach(q => {
+      if (respuestas[q.id] === q.correcta) { ok++; totalCorrectas++; }
+    });
+    porSeccion[sec.titulo] = { correctas: ok, total: sec.preguntas.length };
+  });
+
+  const pct = Math.round(totalCorrectas / totalPreguntas * 100);
+  const ts  = new Date().toISOString();
+
+  const payload = {
+    timestamp: ts,
+    nombre, semestre, momento, grupo,
+    experiencia_previa: exp,
+    puntaje_total: totalCorrectas,
+    puntaje_porcentaje: pct,
+    total_preguntas: totalPreguntas,
+    por_seccion: porSeccion,
+    respuestas_detalle: respuestas,
+  };
+
+  // Mostrar resultado inmediatamente
+  mostrarResultado(payload, porSeccion, totalCorrectas, pct);
+
+  // Enviar a JSONBin (reemplaza BIN_ID y API_KEY con los tuyos)
+  const BIN_ID  = '6a60ddf5da38895dfe7fee60';
+  const API_KEY = '$2a$10$yJBW6mob86NQpJ1uZ605EuNJnV3Znw/5Qbuloh1wS4cwb.UJBu9E2';
+
+  if (BIN_ID === 'NO_CONFIGURADO') {
+    document.getElementById('envio-status').innerHTML =
+      '<div class="err-msg">⚠️ Configura tu BIN_ID y API_KEY de JSONBin para activar el envío automático de datos.</div>';
+    return;
+  }
+
+  try {
+    document.getElementById('envio-status').innerHTML = '<div class="enviando">Enviando datos...</div>';
+    // Leer bin actual y agregar registro
+    const getRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': API_KEY }
+    });
+    const getData = await getRes.json();
+    const registros = getData.record?.registros || [];
+    registros.push(payload);
+
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+      body: JSON.stringify({ registros })
+    });
+    document.getElementById('envio-status').innerHTML =
+      '<div class="ok-msg">✓ Respuestas enviadas correctamente al sistema de investigación.</div>';
+  } catch (e) {
+    document.getElementById('envio-status').innerHTML =
+      '<div class="err-msg">Error al enviar. Toma una captura del resultado y compártela con el docente.</div>';
+  }
+}
+
+function mostrarResultado(payload, porSeccion, totalCorrectas, pct) {
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('btn-enviar').style.display = 'none';
+  document.querySelector('.intro-card').style.display = 'none';
+
+  const color = pct >= 80 ? '#059669' : pct >= 60 ? '#d97706' : '#dc2626';
+  const msg   = pct >= 80 ? 'Excelente nivel de conocimiento basal.' :
+                pct >= 60 ? 'Nivel de conocimiento intermedio.' :
+                'Nivel de conocimiento inicial — hay mucho por aprender en la rotación.';
+
+  const filasTabla = Object.entries(porSeccion).map(([tema, d]) => {
+    const p2 = Math.round(d.correctas / d.total * 100);
+    const bar = `<div style="height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${p2}%;background:${p2>=80?'#059669':p2>=60?'#d97706':'#dc2626'};border-radius:99px"></div></div>`;
+    return `<tr><td>${tema}</td><td style="text-align:center;font-weight:600">${d.correctas}/${d.total}</td><td>${p2}%${bar}</td></tr>`;
+  }).join('');
+
+  document.getElementById('resultado-area').innerHTML = `
+    <div class="resultado">
+      <h2>Resultado — ${payload.momento === 'pre' ? 'Pre-test (Día 1)' : 'Post-test (Día 21)'}</h2>
+      <div style="font-size:14px;color:#6b7280">Estudiante: <strong>${payload.nombre}</strong> · ${payload.grupo} · ${payload.semestre}</div>
+      <div class="puntaje-grande" style="color:${color}">${totalCorrectas}<span style="font-size:30px;color:#9ca3af">/${totalPreguntas}</span></div>
+      <div style="font-size:15px;color:${color};font-weight:500">${pct}% — ${msg}</div>
+
+      <div class="resumen-grid" style="margin-top:20px">
+        <div class="resumen-card"><div class="val">${totalCorrectas}</div><div class="lbl">Correctas</div></div>
+        <div class="resumen-card"><div class="val">${totalPreguntas - totalCorrectas}</div><div class="lbl">Incorrectas</div></div>
+        <div class="resumen-card"><div class="val">${pct}%</div><div class="lbl">Porcentaje</div></div>
+      </div>
+
+      <table class="detalle-tabla">
+        <thead><tr><th>Tema</th><th>Correctas</th><th>Desempeño</th></tr></thead>
+        <tbody>${filasTabla}</tbody>
+      </table>
+
+      <div style="margin-top:16px;font-size:13px;color:#6b7280;background:#f9fafb;border-radius:8px;padding:12px">
+        ${payload.momento === 'pre'
+          ? 'Este es tu punto de partida. Al finalizar la rotación (día 21) completarás el mismo quiz y podrás ver tu progreso.'
+          : 'Este es tu resultado final. Compara con tu pre-test del día 1 para ver cuánto avanzaste en la rotación.'}
+      </div>
+      <div id="envio-status"></div>
+    </div>
+  `;
+}
+
+// ── INICIALIZAR ───────────────────────────────────────────────────────────
+renderQuiz();
+</script>
+</body>
+</html>

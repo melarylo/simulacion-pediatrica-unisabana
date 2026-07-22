@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Reanimación Neonatal — NRP 2025</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f3f4f6; color: #111827; min-height: 100vh; }
+
+.top-bar { background: #1e3a5f; color: #fff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+.top-bar-title { font-size: 14px; font-weight: 500; }
+.top-bar-sub { font-size: 11px; opacity: .7; margin-top: 2px; }
+.nrp-badge { background: #dbeafe; color: #1e40af; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+.timer-display { font-family: monospace; font-size: 22px; font-weight: 600; color: #fbbf24; text-align: right; }
+.timer-label { font-size: 10px; opacity: .6; text-align: right; }
+
+.container { max-width: 780px; margin: 0 auto; padding: 20px 16px; }
+
+/* Progress */
+.phase-nav { display: flex; gap: 0; margin-bottom: 16px; border-radius: 10px; overflow: hidden; border: 0.5px solid #e5e7eb; }
+.phase-btn { flex: 1; padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 500; background: #f9fafb; color: #6b7280; border-right: 0.5px solid #e5e7eb; cursor: default; }
+.phase-btn:last-child { border-right: none; }
+.phase-btn.active { background: #1e3a5f; color: #fff; }
+.phase-btn.done { background: #d1fae5; color: #065f46; }
+.phase-btn .phase-num { font-size: 14px; font-weight: 700; display: block; margin-bottom: 2px; }
+
+/* Monitor */
+.monitor-wrap { background: #060606; border-radius: 12px; padding: 12px 14px 8px; margin-bottom: 14px; }
+.monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.monitor-label { font-size: 10px; font-family: monospace; letter-spacing: .05em; }
+.monitor-right { font-size: 10px; color: #4b5563; font-family: monospace; }
+canvas { display: block; width: 100%; }
+.spo2-table { display: flex; gap: 12px; margin-top: 6px; }
+.spo2-item { font-size: 10px; color: #4b5563; font-family: monospace; }
+.spo2-val { color: #60a5fa; }
+
+/* Vitals */
+.vitals-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.vital-card { background: #fff; border-radius: 8px; padding: 8px 10px; border: 0.5px solid #e5e7eb; }
+.vital-label { font-size: 10px; color: #6b7280; margin-bottom: 2px; }
+.vital-val { font-size: 20px; font-weight: 600; }
+.vital-sub { font-size: 10px; margin-top: 2px; }
+.v-danger { color: #dc2626; }
+.v-warn { color: #d97706; }
+.v-ok { color: #059669; }
+.v-pending { color: #9ca3af; }
+
+/* Scenario */
+.scenario-card { background: #fff; border: 0.5px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.scenario-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.scenario-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.scenario-title { font-size: 14px; font-weight: 600; }
+.scenario-sub { font-size: 11px; color: #6b7280; }
+.scenario-text { font-size: 13px; line-height: 1.65; color: #374151; }
+.alert-nrp { background: #fef3c7; border: 0.5px solid #fcd34d; border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 12px; color: #92400e; }
+
+/* Question */
+.q-card { background: #fff; border: 0.5px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.q-step-label { font-size: 11px; color: #6b7280; font-weight: 500; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.q-text { font-size: 14px; font-weight: 500; color: #111827; margin-bottom: 12px; line-height: 1.5; }
+.options { display: flex; flex-direction: column; gap: 7px; }
+.opt { background: #fff; border: 0.5px solid #d1d5db; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; line-height: 1.45; display: flex; align-items: flex-start; gap: 10px; transition: background .1s; }
+.opt:hover:not(.disabled) { background: #f9fafb; }
+.opt.disabled { opacity: .45; cursor: not-allowed; }
+.opt.correct { border-color: #6ee7b7; background: #d1fae5; color: #065f46; }
+.opt.incorrect { border-color: #fca5a5; background: #fee2e2; color: #991b1b; }
+.opt-letter { font-size: 11px; font-weight: 700; min-width: 18px; color: #6b7280; margin-top: 1px; flex-shrink: 0; }
+.opt.correct .opt-letter { color: #065f46; }
+.opt.incorrect .opt-letter { color: #991b1b; }
+
+/* Feedback */
+.fb { border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.6; margin-top: 12px; border: 0.5px solid; }
+.fb-ok { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.fb-err { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+/* NRP Key box */
+.nrp-key { background: #eff6ff; border: 0.5px solid #93c5fd; border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 12px; color: #1e40af; line-height: 1.6; }
+.nrp-key strong { display: block; margin-bottom: 4px; }
+
+/* Protocol box */
+.protocol-box { background: #f8fafc; border: 0.5px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; margin-top: 12px; }
+.protocol-title { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+.protocol-step { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; font-size: 12px; }
+.ps-num { width: 18px; height: 18px; border-radius: 50%; background: #1e3a5f; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.ps-text { flex: 1; line-height: 1.5; }
+.ps-dose { font-weight: 600; color: #1e3a5f; }
+
+/* Buttons */
+.btn-primary { background: #1e3a5f; color: #fff; border: none; padding: 11px 24px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 10px; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-secondary { background: #fff; color: #374151; border: 0.5px solid #d1d5db; padding: 11px 24px; border-radius: 8px; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; }
+.btn-secondary:hover { background: #f9fafb; }
+
+/* Log */
+.log-wrap { background: #fff; border: 0.5px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+.log-title { font-size: 11px; color: #6b7280; font-weight: 500; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.log-list { max-height: 90px; overflow-y: auto; font-family: monospace; font-size: 11px; }
+.log-entry { padding: 2px 0; border-bottom: 0.5px solid #f3f4f6; color: #6b7280; }
+.log-entry.good { color: #059669; }
+.log-entry.bad { color: #dc2626; }
+
+/* Final */
+.final-card { background: #fff; border: 0.5px solid #e5e7eb; border-radius: 12px; padding: 28px; text-align: center; }
+.final-score { font-size: 56px; font-weight: 700; margin: 12px 0 6px; }
+.final-msg { font-size: 14px; color: #6b7280; margin-bottom: 20px; }
+.final-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; text-align: left; }
+.final-item { background: #f9fafb; border-radius: 8px; padding: 10px 12px; }
+.final-item-val { font-size: 20px; font-weight: 700; color: #1e3a5f; }
+.final-item-lbl { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.summary-list { background: #f9fafb; border-radius: 10px; padding: 14px 16px; text-align: left; margin-bottom: 16px; }
+.summary-item { font-size: 13px; padding: 4px 0; border-bottom: 0.5px solid #e5e7eb; }
+.summary-item:last-child { border-bottom: none; }
+.summary-check { color: #059669; margin-right: 6px; }
+.summary-x { color: #dc2626; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-bar-title">Simulador Reanimación Neonatal &nbsp;<span class="nrp-badge">NRP 2025</span></div>
+    <div class="top-bar-sub">Hospital Simulado · Universidad de La Sabana</div>
+  </div>
+  <div>
+    <div class="timer-display" id="timer">00:00</div>
+    <div class="timer-label">tiempo de reanimación</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="phase-nav" id="phase-nav"></div>
+  <div class="vitals-grid" id="vitals-grid"></div>
+  <div class="monitor-wrap">
+    <div class="monitor-header">
+      <div class="monitor-label" id="ecg-label" style="color:#00ff41">FC — EVALUANDO</div>
+      <div class="monitor-right">ECG · SpO₂ preductal</div>
+    </div>
+    <canvas id="ecg" height="72"></canvas>
+    <div class="spo2-table">
+      <div class="spo2-item">1 min: <span class="spo2-val">60–65%</span></div>
+      <div class="spo2-item">2 min: <span class="spo2-val">65–70%</span></div>
+      <div class="spo2-item">3 min: <span class="spo2-val">70–75%</span></div>
+      <div class="spo2-item">5 min: <span class="spo2-val">80–85%</span></div>
+      <div class="spo2-item">10 min: <span class="spo2-val">85–95%</span></div>
+    </div>
+  </div>
+  <div id="main-content"></div>
+  <div class="log-wrap">
+    <div class="log-title">Registro de acciones</div>
+    <div class="log-list" id="log-list"><div class="log-entry">00:00 — Nacimiento. Equipo listo en sala de partos.</div></div>
+  </div>
+</div>
+
+<script>
+// ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
+let phase = 0;
+let qStep = 0; // pregunta dentro de la fase
+let scores = { correct: 0, total: 0 };
+let phaseScores = [0, 0, 0]; // correctas por fase
+let answered = false;
+let timerSec = 0;
+let timerInt = null;
+let ecgAnim = null;
+let ecgPhase = 0;
+let currentEcg = 'flat';
+
+// ── DATOS DEL SIMULADOR ───────────────────────────────────────────────────
+const PHASES = [
+  {
+    label: 'Fase 1', sublabel: 'Pasos iniciales',
+    avatar: '🍼', avatarBg: '#dbeafe',
+    ecgType: 'slow', ecgColor: '#fbbf24', ecgLabel: 'FC — EVALUANDO POR AUSCULTACIÓN',
+    vitals: [
+      { label:'FC', val:'—', cls:'v-pending', sub:'Evaluando' },
+      { label:'SpO₂', cls:'v-pending', val:'—', sub:'Sin sensor aún' },
+      { label:'Tono', val:'↓', cls:'v-warn', sub:'Disminuido' },
+      { label:'Respiración', val:'Apnea', cls:'v-danger', sub:'Sin llanto' }
+    ],
+    scenario: `Eres el médico responsable de la sala de partos. Nace <strong>Simón</strong>, producto de 38 semanas de gestación, parto vaginal de urgencia por sufrimiento fetal agudo. Liquido amniótico claro.`,
+    alert: 'NRP 2025: El equipo realizó un briefing pre-parto y asignó roles. El primer paso del algoritmo es iniciar el plan de manejo del cordón.',
+    questions: [
+      {
+        label:'Paso 1 — Evaluación inicial y manejo del cordón',
+        q: 'Al nacer Simón luce flácido y no respira. ¿Cuál es la secuencia correcta de los primeros pasos según NRP 2025?',
+        opts:[
+          { t:'Pinzar el cordón de inmediato, secar, estimular y evaluar respiración + FC', ok:false, fb:'El pinzamiento inmediato ya no es el estándar. NRP 2025 recomienda deferir el pinzamiento al menos 60 segundos mientras se realizan los pasos iniciales (secar, estimular, evaluar) con el cordón intacto, siempre que el neonato no requiera reanimación inmediata urgente.' },
+          { t:'Deferir pinzamiento ≥ 60 seg, secar, estimular, evaluar tono/respiración/FC — si no respira en 60 seg: iniciar VPP', ok:true, fb:'Correcto — NRP 2025: el algoritmo inicia con el plan de manejo del cordón. Pinzamiento diferido ≥ 60 segundos para término que no requiere reanimación urgente. Durante ese tiempo: secar, estimular (frotar espalda y plantas), evaluar tono, respiración y FC. Si apnea o FC < 100 a los 60 seg: iniciar VPP.' },
+          { t:'Aspirar secreciones de boca y nariz primero, luego deferir el cordón', ok:false, fb:'NRP 2025 es explícito: la aspiración de rutina NO está recomendada independientemente de si el líquido es claro o teñido de meconio. Solo se aspira si hay evidencia de obstrucción de la vía aérea durante la ventilación.' },
+          { t:'Intubar de inmediato dado que no respira al nacer', ok:false, fb:'La intubación no es el primer paso. NRP 2025: la ventilación con bolsa-mascarilla (o máscara laríngea en ≥ 34 sem) es el primer dispositivo de elección antes de considerar intubación. La intubación se indica si la VPP con mascarilla falla (pasos correctivos) o cuando se van a iniciar compresiones.' }
+        ],
+        nrpKey:'NRP 2025: Aspiración de rutina NO recomendada. Deferir cordón ≥ 60 seg si no se requiere reanimación urgente. Primer indicador de ventilación efectiva: aumento de la FC.'
+      },
+      {
+        label:'Paso 2 — Inicio de VPP',
+        q: 'A los 60 segundos: Simón sin respiración espontánea, FC 72 lpm por auscultación. Se pinzó el cordón. ¿Cuál es la acción inmediata?',
+        opts:[
+          { t:'Iniciar VPP con mascarilla, FiO₂ 21% (aire ambiente), colocar oxímetro preductal y monitor ECG', ok:true, fb:'Correcto — NRP 2025: VPP indicada cuando FC < 100 lpm o apnea/gasping a los 60 segundos. Término y pretérmino tardío (≥ 35 sem): iniciar con 21% O₂. Colocar oxímetro en mano/muñeca derecha (preductal). El ECG es más rápido y preciso para evaluar FC — colocarlo cuando se inicia VPP.' },
+          { t:'Iniciar VPP con FiO₂ 100% para garantizar oxigenación máxima', ok:false, fb:'NRP 2025: en término (≥ 35 sem) iniciar VPP con 21% O₂ (aire ambiente). La evidencia muestra que la hiperoxia puede ser dañina. Titular el O₂ según la tabla de saturaciones preductales objetivo por minuto.' },
+          { t:'Esperar 30 segundos más de estimulación — la FC de 72 lpm puede mejorar sola', ok:false, fb:'FC 72 lpm sin respiración espontánea a los 60 segundos es indicación de VPP inmediata. NRP 2025: el riesgo de muerte o prolongación de la hospitalización aumenta 16% por cada 30 segundos de retraso en iniciar ventilación.' },
+          { t:'Intubar y conectar a ventilador mecánico — FC < 100 lpm es indicación de intubación', ok:false, fb:'FC < 100 lpm NO es indicación directa de intubación. La VPP con bolsa-mascarilla o máscara laríngea (en ≥ 34 sem) es el primer paso. La intubación se reserva para cuando la VPP con mascarilla falla tras los pasos correctivos (MRSOPA).' }
+        ],
+        nrpKey:'NRP 2025: VPP se inicia con 21% O₂ en término. Oxímetro en mano derecha (preductal). ECG es el método más rápido para evaluar FC — colocarlo al iniciar VPP. Frecuencia de VPP: 30–60 inflaciones/min. Presión inicial: 20–30 cmH₂O.'
+      }
+    ]
+  },
+  {
+    label: 'Fase 2', sublabel: 'VPP y vía aérea',
+    avatar: '🍼', avatarBg: '#fef3c7',
+    ecgType: 'slow', ecgColor: '#fbbf24', ecgLabel: 'FC 58 lpm — BRADICARDIA',
+    vitals: [
+      { label:'FC', val:'58', cls:'v-danger', sub:'Bradicardia' },
+      { label:'SpO₂', val:'52%', cls:'v-danger', sub:'↓ meta 1 min: 60-65%' },
+      { label:'Tono', val:'↓↓', cls:'v-danger', sub:'Hipotónico' },
+      { label:'VPP', val:'En curso', cls:'v-warn', sub:'30 seg sin mejoría' }
+    ],
+    scenario: `<strong>3 minutos de vida.</strong> Iniciaste VPP con mascarilla FiO₂ 21%. Después de 30 segundos de VPP, el ECG muestra FC 58 lpm y el tórax <strong>no eleva</strong> bien. El compañero dice que nota pérdida de sello con la mascarilla.`,
+    alert: 'NRP 2025: El indicador primario de VPP efectiva es el AUMENTO de la FC, no el movimiento torácico. Si la FC no sube después de 30 seg de VPP: ejecutar los pasos correctivos.',
+    questions: [
+      {
+        label:'Paso 3 — VPP inefectiva: pasos correctivos',
+        q: 'VPP 30 segundos, FC 58 lpm, tórax no eleva bien, pérdida de sello. ¿Cuál es el orden correcto de los pasos correctivos según NRP 2025?',
+        opts:[
+          { t:'M → R → S → O → P → A (Mascarilla, Reposición, Succión, Boca abierta, Presión, Alternativa)', ok:true, fb:'Correcto — NRP 2025 (mnemotecnia MRSOPA): M = ajustar Mascarilla, R = Reposicionar vía aérea (posición neutra), S = Succionar boca y nariz, O = Abrir boca (Open), P = aumentar Presión pico, A = Alternativa de vía aérea (máscara laríngea ≥ 34 sem o TET). Ejecutar en ese orden hasta que el tórax eleve y la FC aumente.' },
+          { t:'Intubar de inmediato — la FC < 60 lpm con VPP fallida es indicación absoluta de intubación', ok:false, fb:'Antes de intubar, NRP 2025 indica ejecutar los pasos correctivos (MRSOPA). Si después de estos pasos la VPP sigue siendo inefectiva, entonces considerar máscara laríngea (≥ 34 sem) o intubación. La intubación inmediata sin pasos correctivos puede provocar demoras innecesarias.' },
+          { t:'Aumentar la FiO₂ a 100% y continuar la VPP igual por otros 30 segundos', ok:false, fb:'El problema no es la FiO₂ sino la inefectividad mecánica de la VPP (pérdida de sello). Aumentar el O₂ sin corregir el sello no mejorará la FC. Primero corregir la causa de la inefectividad (pasos MRSOPA).' },
+          { t:'Iniciar compresiones torácicas — FC < 60 lpm es indicación de compresiones', ok:false, fb:'NRP 2025 es claro: las compresiones se inician cuando FC < 60 lpm después de 30 segundos de VPP con ELEVACIÓN TORÁCICA confirmada. Si el tórax no eleva, la VPP no es efectiva — primero corregir la VPP con pasos MRSOPA, luego reevaluar antes de comprimir.' }
+        ],
+        nrpKey:'MRSOPA: Mascarilla · Reposicionar · Succionar · Open mouth · Presión · Alternativa. El tórax debe elevarse antes de iniciar compresiones. Máscara laríngea: puede usarse como dispositivo PRIMARIO en ≥ 34 semanas (nuevo en NRP 2025).'
+      },
+      {
+        label:'Paso 4 — Dispositivo de vía aérea',
+        q: 'Tras pasos MRSOPA, el tórax ya eleva. Pero la FC persiste en 52 lpm. El colega propone máscara laríngea. Simón tiene 38 semanas. ¿Es correcto?',
+        opts:[
+          { t:'Sí — NRP 2025 avala la máscara laríngea como dispositivo primario en ≥ 34 semanas si la mascarilla facial falla', ok:true, fb:'Correcto — NRP 2025 (cambio importante vs versiones previas): la máscara laríngea puede usarse como dispositivo PRIMARIO o alternativo en neonatos ≥ 34 semanas. No es solo una alternativa a la intubación. Es una opción válida cuando la VPP con mascarilla facial es subóptima.' },
+          { t:'No — la máscara laríngea no está aprobada para neonatos, solo para niños mayores', ok:false, fb:'Incorrecto. NRP 2025 incluye explícitamente la máscara laríngea para neonatos ≥ 34 semanas o ≥ 2 kg. Es un cambio importante respecto a versiones anteriores del NRP donde solo era una alternativa de rescate.' },
+          { t:'No — si la FC persiste < 60 lpm debe intubarse de inmediato sin probar la máscara laríngea', ok:false, fb:'La máscara laríngea es una opción válida antes de la intubación, especialmente si se tiene experiencia con el dispositivo. NRP 2025 la incluye explícitamente como alternativa razonable en ≥ 34 semanas cuando la VPP con mascarilla facial es inefectiva.' },
+          { t:'Solo si hay un anestesiólogo disponible para colocarla', ok:false, fb:'La máscara laríngea puede ser colocada por cualquier profesional de salud entrenado en reanimación neonatal. NRP 2025 la incluye como habilidad del equipo de reanimación, no exclusiva de anestesiología.' }
+        ],
+        nrpKey:'NRP 2025 — NOVEDAD: máscara laríngea puede usarse como dispositivo PRIMARIO (no solo alternativo) en ≥ 34 semanas. Ventilación efectiva es el paso más importante en reanimación neonatal.'
+      }
+    ]
+  },
+  {
+    label: 'Fase 3', sublabel: 'Reanimación avanzada',
+    avatar: '🍼', avatarBg: '#fee2e2',
+    ecgType: 'very_slow', ecgColor: '#f87171', ecgLabel: 'FC 44 lpm — BRADICARDIA SEVERA',
+    vitals: [
+      { label:'FC', val:'44', cls:'v-danger', sub:'< 60 lpm' },
+      { label:'SpO₂', val:'45%', cls:'v-danger', sub:'Crítica' },
+      { label:'Tono', val:'↓↓↓', cls:'v-danger', sub:'Sin respuesta' },
+      { label:'VPP', val:'TET', cls:'v-warn', sub:'Intubado, tórax ↑' }
+    ],
+    scenario: `<strong>5 minutos de vida.</strong> Simón fue intubado con TET 3.5 mm. El tórax eleva bilateralmente. VPP con TET + 100% O₂. ECG: FC 44 lpm persistente. Sin movimiento espontáneo. SpO₂ 45%.`,
+    alert: 'NRP 2025: Compresiones indicadas cuando FC < 60 lpm después de 30 segundos de VPP con tórax que ELEVA (ventilación efectiva confirmada). Usar 100% O₂ durante las compresiones.',
+    questions: [
+      {
+        label:'Paso 5 — Compresiones torácicas',
+        q: 'VPP con TET efectiva (tórax eleva), FC 44 lpm. ¿Cuál es el manejo correcto de las compresiones?',
+        opts:[
+          { t:'Iniciar compresiones: técnica 2 pulgares encircling, relación 3:1, 100% O₂, acceso venoso umbilical', ok:true, fb:'Correcto — NRP 2025: compresiones indicadas cuando FC < 60 lpm con VPP efectiva confirmada (tórax eleva). Técnica preferida: 2 pulgares con manos rodeando el tórax (encircling) — genera mayor presión y menos fatiga. Relación 3:1 (90 comp/min + 30 vent/min). Aumentar a 100% O₂ durante las compresiones. Iniciar acceso venoso umbilical (CUV) para medicamentos.' },
+          { t:'Compresiones con técnica de 2 dedos, relación 15:2 como en pediatría, FiO₂ 21%', ok:false, fb:'Tres errores: en neonatos la técnica preferida es 2 pulgares encircling (no 2 dedos). La relación es 3:1 (no 15:2 — esa es para > 1 mes de edad). Durante compresiones neonatales se usa 100% O₂ (no 21%).' },
+          { t:'Desfibrilar con 2 J/kg — FC < 60 lpm con bradicardia es indicación de desfibrilación', ok:false, fb:'La bradicardia neonatal NO es un ritmo desfibrilable. La desfibrilación está indicada para fibrilación ventricular o taquicardia ventricular sin pulso — infrecuentes en neonatos. El tratamiento de la bradicardia neonatal es VPP + compresiones + epinefrina si no hay respuesta.' },
+          { t:'Esperar 5 minutos más de VPP — la FC puede mejorar sin compresiones', ok:false, fb:'Con FC 44 lpm y VPP efectiva confirmada (tórax eleva), las compresiones deben iniciarse de inmediato. NRP 2025: el retraso en iniciar compresiones cuando están indicadas aumenta el riesgo de daño cerebral y muerte.' }
+        ],
+        nrpKey:'Compresiones neonatales NRP 2025: 2 pulgares encircling (preferido) · Relación 3:1 · 90 comp/min + 30 vent/min · 100% O₂ durante compresiones · CUV como acceso primario · IO si CUV no es posible.'
+      },
+      {
+        label:'Paso 6 — Epinefrina y ROSC',
+        q: 'Compresiones 60 segundos. FC persiste < 60 lpm. CUV colocado. ¿Cuál es la dosis y vía correcta de epinefrina según NRP 2025?',
+        opts:[
+          { t:'Epinefrina IV/IO 0.01–0.03 mg/kg por CUV + flush 3 mL SSN. Si no hay acceso: endotraqueal 0.05–0.1 mg/kg', ok:true, fb:'Correcto — NRP 2025: epinefrina intravascular (CUV o IO) 0.01–0.03 mg/kg es la primera línea. Seguir con flush de 3 mL SSN. Si no hay acceso intravascular: endotraqueal 0.05–0.1 mg/kg (dosis mayor porque la absorción es menor). Repetir cada 3–5 minutos si FC persiste < 60 lpm. Preferir siempre la vía intravascular.' },
+          { t:'Epinefrina endotraqueal 0.01 mg/kg — misma dosis que IV pero más rápida por el TET', ok:false, fb:'La dosis endotraqueal NO es la misma que la IV. NRP 2025: endotraqueal requiere 0.05–0.1 mg/kg (5–10 veces mayor) porque la absorción pulmonar es menos predecible. La dosis IV/IO es 0.01–0.03 mg/kg. Usar dosis IV por vía endotraqueal resultará en concentraciones plasmáticas insuficientes.' },
+          { t:'Atropina 0.02 mg/kg IV — indicada en bradicardia neonatal refractaria', ok:false, fb:'La atropina NO está en el algoritmo NRP 2025 para reanimación neonatal. La bradicardia neonatal es consecuencia de hipoxia — el tratamiento es VPP + compresiones + epinefrina. La atropina es el fármaco de bradicardia en el algoritmo PALS pediátrico (> 1 mes), no en neonatos.' },
+          { t:'Adrenalina 1 mg/kg IV en bolo rápido — dosis alta para reanimación avanzada', ok:false, fb:'Error grave de dosis: la epinefrina neonatal es 0.01–0.03 mg/kg IV. 1 mg/kg sería 30–100 veces la dosis correcta y podría ser fatal. Las dosis altas de epinefrina en neonatos no han demostrado beneficio y pueden causar hipertensión severa y daño miocárdico.' }
+        ],
+        nrpKey:'Epinefrina NRP 2025: IV/IO 0.01–0.03 mg/kg + flush 3 mL SSN (primera línea). Endotraqueal: 0.05–0.1 mg/kg (mientras se obtiene acceso IV). Repetir c/3–5 min. Si sin respuesta a 20 min: discutir redirección de cuidados con equipo y familia.',
+        protocol:{
+          title:'Algoritmo NRP 2025 — Reanimación Avanzada',
+          steps:[
+            {n:1, text:'VPP efectiva confirmada (tórax eleva)', dose:'21% O₂ en término → titular por oximetría'},
+            {n:2, text:'FC < 60 lpm a los 30 seg de VPP efectiva', dose:'→ Iniciar compresiones + 100% O₂ + acceso umbilical'},
+            {n:3, text:'Compresiones 60 segundos, FC < 60 lpm', dose:'→ Epinefrina IV/IO 0.01–0.03 mg/kg'},
+            {n:4, text:'Repetir epinefrina cada 3–5 min si FC < 60 lpm', dose:'→ Evaluar causas: neumotórax · hipovolemia'},
+            {n:5, text:'Sin FC detectable a los 20 minutos', dose:'→ Discutir redirección de cuidados con familia'}
+          ]
+        }
+      }
+    ]
+  }
+];
+
+// ── TIMER ─────────────────────────────────────────────────────────────────
+function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function startTimer(){ timerInt = setInterval(()=>{ timerSec++; document.getElementById('timer').textContent = fmt(timerSec); }, 1000); }
+function addLog(msg, cls=''){ const l=document.getElementById('log-list'); const d=document.createElement('div'); d.className='log-entry'+(cls?' '+cls:''); d.textContent=fmt(timerSec)+' — '+msg; l.appendChild(d); l.scrollTop=l.scrollHeight; }
+
+// ── ECG ───────────────────────────────────────────────────────────────────
+function drawECG(){
+  if(ecgAnim) cancelAnimationFrame(ecgAnim);
+  const c=document.getElementById('ecg'); if(!c)return;
+  const ctx=c.getContext('2d');
+  const ph=PHASES[phase];
+  const col=ph.ecgColor;
+  const type=ph.ecgType;
+  function frame(){
+    const W=c.offsetWidth||720, H=72;
+    c.width=W; ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#1a2a1a'; ctx.lineWidth=0.5;
+    for(let x=0;x<W;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=18){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.beginPath();
+    ecgPhase=(ecgPhase+1.4)%W;
+    for(let x=0;x<W;x++){
+      const t=((x+ecgPhase)%W)/W; let y=H/2;
+      if(type==='slow'){
+        const b=(t*2.2)%1;
+        if(b<.05)y=H/2-5; else if(b<.09)y=H/2-2; else if(b<.13)y=H/2-20; else if(b<.17)y=H/2+7; else if(b<.21)y=H/2-2;
+        else if(b>.28&&b<.40)y=H/2-4*Math.sin((b-.28)*Math.PI/.12);
+        else y=H/2;
+      } else if(type==='very_slow'){
+        const b=(t*1.4)%1;
+        if(b<.05)y=H/2-4; else if(b<.09)y=H/2-2; else if(b<.13)y=H/2-18; else if(b<.17)y=H/2+6; else if(b<.21)y=H/2-2;
+        else if(b>.30&&b<.44)y=H/2-3*Math.sin((b-.30)*Math.PI/.14);
+        else y=H/2+(Math.random()*.8-.4);
+      } else if(type==='normal'){
+        const b=(t*4.5)%1;
+        if(b<.04)y=H/2-5; else if(b<.07)y=H/2+5; else if(b<.10)y=H/2-24; else if(b<.13)y=H/2+9; else if(b<.16)y=H/2-2;
+        else if(b>.24&&b<.36)y=H/2-4*Math.sin((b-.24)*Math.PI/.12);
+        else y=H/2;
+      }
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ecgAnim=requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderPhaseNav(){
+  const nav=document.getElementById('phase-nav');
+  nav.innerHTML=PHASES.map((p,i)=>`
+    <div class="phase-btn ${i===phase?'active':i<phase?'done':''}">
+      <span class="phase-num">${i<phase?'✓':i+1}</span>
+      ${p.label}<br><span style="font-size:10px;opacity:.8">${p.sublabel}</span>
+    </div>`).join('');
+}
+
+function renderVitals(){
+  const ph=PHASES[phase];
+  document.getElementById('vitals-grid').innerHTML=ph.vitals.map(v=>`
+    <div class="vital-card">
+      <div class="vital-label">${v.label}</div>
+      <div class="vital-val ${v.cls}">${v.val}</div>
+      <div class="vital-sub ${v.cls}">${v.sub}</div>
+    </div>`).join('');
+  document.getElementById('ecg-label').textContent=ph.ecgLabel;
+  document.getElementById('ecg-label').style.color=ph.ecgColor;
+}
+
+function renderPhase(){
+  answered=false;
+  renderPhaseNav();
+  renderVitals();
+  drawECG();
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const ph=PHASES[phase];
+  const q=ph.questions[qStep];
+  const letters=['A','B','C','D'];
+  const content=document.getElementById('main-content');
+  content.innerHTML=`
+    <div class="scenario-card">
+      <div class="scenario-header">
+        <div class="scenario-avatar" style="background:${ph.avatarBg}">${ph.avatar}</div>
+        <div>
+          <div class="scenario-title">Simón — 38 sem · 3.2 kg · ${fmt(timerSec)} de vida</div>
+          <div class="scenario-sub">Sala de partos · Hospital Simulado</div>
+        </div>
+      </div>
+      <div class="scenario-text">${ph.scenario}</div>
+      <div class="alert-nrp">${ph.alert}</div>
+    </div>
+    <div class="q-card">
+      <div class="q-step-label">${q.label}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options" id="opts">
+        ${q.opts.map((o,i)=>`
+          <div class="opt" id="opt${i}" onclick="handleOpt(${i})">
+            <span class="opt-letter">${letters[i]}</span>
+            <span>${o.t}</span>
+          </div>`).join('')}
+      </div>
+      <div id="fb-area"></div>
+      <div id="next-area"></div>
+    </div>
+  `;
+}
+
+function handleOpt(idx){
+  if(answered) return;
+  answered=true;
+  const ph=PHASES[phase];
+  const q=ph.questions[qStep];
+  const chosen=q.opts[idx];
+  scores.total++;
+  if(chosen.ok){ scores.correct++; phaseScores[phase]++; }
+
+  document.querySelectorAll('.opt').forEach((el,i)=>{
+    el.classList.add('disabled');
+    if(q.opts[i].ok) el.classList.add('correct');
+  });
+  document.getElementById('opt'+idx).classList.add(chosen.ok?'correct':'incorrect');
+  addLog((chosen.ok?'✓ ':'✗ ')+chosen.t.substring(0,55)+'…', chosen.ok?'good':'bad');
+
+  let protocolHTML='';
+  if(q.protocol){
+    protocolHTML=`<div class="protocol-box"><div class="protocol-title">${q.protocol.title}</div>${q.protocol.steps.map(s=>`<div class="protocol-step"><div class="ps-num">${s.n}</div><div class="ps-text">${s.text} — <span class="ps-dose">${s.dose}</span></div></div>`).join('')}</div>`;
+  }
+
+  document.getElementById('fb-area').innerHTML=`
+    <div class="fb ${chosen.ok?'fb-ok':'fb-err'}"><strong>${chosen.ok?'Correcto':'No es la mejor opción'}:</strong> ${chosen.fb}</div>
+    <div class="nrp-key"><strong>Punto clave NRP 2025:</strong>${q.nrpKey}</div>
+    ${protocolHTML}
+  `;
+
+  const isLastQ = qStep >= ph.questions.length-1;
+  const isLastPhase = phase >= PHASES.length-1;
+  const na=document.getElementById('next-area');
+
+  if(!isLastQ){
+    const btn=document.createElement('button'); btn.className='btn-primary';
+    btn.textContent='Siguiente pregunta →';
+    btn.onclick=()=>{ qStep++; answered=false; renderQuestion(); window.scrollTo({top:0,behavior:'smooth'}); };
+    na.appendChild(btn);
+  } else if(!isLastPhase){
+    const btn=document.createElement('button'); btn.className='btn-primary';
+    btn.textContent='Continuar a '+PHASES[phase+1].label+' — '+PHASES[phase+1].sublabel+' →';
+    btn.onclick=()=>{ phase++; qStep=0; answered=false; renderPhase(); window.scrollTo({top:0,behavior:'smooth'}); };
+    na.appendChild(btn);
+  } else {
+    const btn=document.createElement('button'); btn.className='btn-primary';
+    btn.textContent='Ver resultado final →';
+    btn.onclick=showFinal;
+    na.appendChild(btn);
+  }
+}
+
+function showFinal(){
+  if(timerInt) clearInterval(timerInt);
+  if(ecgAnim) cancelAnimationFrame(ecgAnim);
+  const pct=Math.round(scores.correct/scores.total*100);
+  const col=pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
+  const msg=scores.correct===scores.total?'Dominio excelente del algoritmo NRP 2025.':pct>=70?'Muy bien. Revisa los puntos marcados.':pct>=50?'Buen intento. Repasa el algoritmo NRP 2025.':'Necesitas repasar el algoritmo neonatal completo.';
+
+  document.getElementById('phase-nav').innerHTML='';
+  document.getElementById('vitals-grid').innerHTML='';
+  document.getElementById('ecg-label').textContent='';
+  const c=document.getElementById('ecg'); if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}
+  document.querySelector('.spo2-table').style.display='none';
+  document.getElementById('log-list').parentElement.style.display='none';
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="final-card">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Resultado final — Reanimación Neonatal NRP 2025</div>
+      <div class="final-score" style="color:${col}">${scores.correct}/${scores.total}</div>
+      <div class="final-msg">${pct}% — ${msg} · Tiempo total: ${fmt(timerSec)}</div>
+      <div class="final-grid">
+        <div class="final-item"><div class="final-item-val">${phaseScores[0]}/2</div><div class="final-item-lbl">Fase 1 — Pasos iniciales</div></div>
+        <div class="final-item"><div class="final-item-val">${phaseScores[1]}/2</div><div class="final-item-lbl">Fase 2 — VPP y vía aérea</div></div>
+        <div class="final-item"><div class="final-item-val">${phaseScores[2]}/2</div><div class="final-item-lbl">Fase 3 — Reanimación avanzada</div></div>
+      </div>
+      <div class="summary-list">
+        <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Conceptos clave evaluados — NRP 2025</div>
+        <div class="summary-item"><span class="summary-check">✓</span>Pinzamiento diferido ≥ 60 seg en término sin reanimación urgente</div>
+        <div class="summary-item"><span class="summary-check">✓</span>Aspiración de rutina NO recomendada (líquido claro ni meconio)</div>
+        <div class="summary-item"><span class="summary-check">✓</span>VPP con 21% O₂ en término · ECG para evaluación de FC</div>
+        <div class="summary-item"><span class="summary-check">✓</span>MRSOPA — pasos correctivos de VPP inefectiva</div>
+        <div class="summary-item"><span class="summary-check">✓</span>Máscara laríngea como dispositivo primario en ≥ 34 semanas</div>
+        <div class="summary-item"><span class="summary-check">✓</span>Compresiones 3:1 · 2 pulgares encircling · 100% O₂</div>
+        <div class="summary-item"><span class="summary-check">✓</span>Epinefrina IV/IO 0.01–0.03 mg/kg · CUV como acceso primario</div>
+        <div class="summary-item"><span class="summary-check">✓</span>Redirección de cuidados si sin FC a los 20 minutos</div>
+      </div>
+      <button class="btn-secondary" onclick="restartSim()">Reiniciar simulación</button>
+    </div>
+  `;
+}
+
+function restartSim(){
+  phase=0; qStep=0; scores={correct:0,total:0}; phaseScores=[0,0,0];
+  answered=false; timerSec=0; ecgPhase=0;
+  document.getElementById('timer').textContent='00:00';
+  document.getElementById('log-list').innerHTML='<div class="log-entry">00:00 — Nacimiento. Equipo listo en sala de partos.</div>';
+  document.getElementById('log-list').parentElement.style.display='';
+  document.querySelector('.spo2-table').style.display='';
+  if(timerInt) clearInterval(timerInt);
+  startTimer(); renderPhase();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+startTimer();
+renderPhase();
+</script>
+</body>
+</html>
