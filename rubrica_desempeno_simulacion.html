@@ -524,12 +524,14 @@ async function enviar(){
       '<div class="status-msg" style="background:#f9fafb;color:#6b7280">Guardando evaluación...</div>';
     const getRes=await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{headers:{'X-Master-Key':API_KEY}});
     const getData=await getRes.json();
-    const registros=getData.record?.registros_rubrica||[];
-    registros.push(payload);
+    const binActual=getData.record||{};
+    const registrosActuales=binActual.registros_rubrica||[];
+    registrosActuales.push(payload);
+    const payloadFinal=Object.assign({},binActual,{registros_rubrica:registrosActuales});
     await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
       method:'PUT',
       headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
-      body:JSON.stringify({registros_rubrica:registros})
+      body:JSON.stringify(payloadFinal)
     });
     document.getElementById('status-envio').innerHTML=
       '<div class="status-msg status-ok">✓ Evaluación guardada correctamente en el sistema de investigación.</div>';

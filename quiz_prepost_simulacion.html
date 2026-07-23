@@ -551,20 +551,21 @@ async function enviar() {
   try {
     document.getElementById('envio-status').innerHTML = '<div class="enviando">Enviando datos...</div>';
     // Leer bin actual y agregar registro
-    const getRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-      headers: { 'X-Master-Key': API_KEY }
+    const getRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
+      headers:{'X-Master-Key':API_KEY}
     });
     const getData = await getRes.json();
-    const registros = getData.record?.registros || [];
-    registros.push(payload);
-
-    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
-      body: JSON.stringify({ registros })
+    const binActual = getData.record || {};
+    const registrosActuales = binActual.registros || [];
+    registrosActuales.push(payload);
+    const payloadFinal = Object.assign({}, binActual, {registros: registrosActuales});
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+      body: JSON.stringify(payloadFinal)
     });
     document.getElementById('envio-status').innerHTML =
-      '<div class="ok-msg">✓ Respuestas enviadas correctamente al sistema de investigación.</div>';
+      '<div class="ok-msg">✓ Datos enviados correctamente al sistema de investigación.</div>';
   } catch (e) {
     document.getElementById('envio-status').innerHTML =
       '<div class="err-msg">Error al enviar. Toma una captura del resultado y compártela con el docente.</div>';
