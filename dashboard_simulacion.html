@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Simulación Pediátrica</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#111827;min-height:100vh;}
+
+/* Top bar */
+.top-bar{background:#1e3a5f;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.top-title{font-size:15px;font-weight:600;}
+.top-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.top-actions{display:flex;gap:8px;align-items:center;}
+.btn-refresh{background:rgba(255,255,255,.15);color:#fff;border:none;padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;}
+.btn-refresh:hover{background:rgba(255,255,255,.25);}
+.btn-export{background:#fbbf24;color:#1e3a5f;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;}
+.last-update{font-size:10px;opacity:.6;}
+
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 60px);padding:20px;}
+.login-card{background:#fff;border-radius:12px;padding:32px;width:100%;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,.1);}
+.login-card h2{font-size:18px;font-weight:600;color:#1e3a5f;margin-bottom:6px;}
+.login-card p{font-size:13px;color:#6b7280;margin-bottom:20px;}
+.login-card input{width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:10px;}
+.login-card input:focus{outline:none;border-color:#1d4ed8;}
+.btn-login{width:100%;padding:12px;background:#1e3a5f;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;}
+.btn-login:hover{background:#1d4ed8;}
+.login-err{font-size:12px;color:#dc2626;margin-top:6px;display:none;}
+
+/* Dashboard */
+.dashboard{display:none;padding:20px 24px;}
+.section-title{font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin:20px 0 10px;}
+
+/* KPI cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px;}
+.kpi{background:#fff;border-radius:10px;padding:16px;border:.5px solid #e5e7eb;}
+.kpi-val{font-size:32px;font-weight:700;color:#1e3a5f;}
+.kpi-lbl{font-size:11px;color:#6b7280;margin-top:3px;}
+.kpi-sub{font-size:11px;margin-top:4px;font-weight:500;}
+.ok{color:#059669;} .warn{color:#d97706;} .danger{color:#dc2626;}
+
+/* Charts grid */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-card{background:#fff;border-radius:10px;padding:16px;border:.5px solid #e5e7eb;}
+.chart-card.full{grid-column:1/-1;}
+.chart-title{font-size:13px;font-weight:600;color:#374151;margin-bottom:12px;}
+.chart-sub{font-size:11px;color:#6b7280;margin-bottom:10px;}
+
+/* Tabla de grupos */
+.tabla-wrap{background:#fff;border-radius:10px;border:.5px solid #e5e7eb;overflow:hidden;margin-bottom:14px;}
+.tabla{width:100%;border-collapse:collapse;font-size:12px;}
+.tabla th{background:#1e3a5f;color:#fff;padding:9px 12px;text-align:left;font-weight:500;font-size:11px;}
+.tabla td{padding:8px 12px;border-bottom:.5px solid #f1f5f9;}
+.tabla tr:last-child td{border-bottom:none;}
+.tabla tr:hover td{background:#f9fafb;}
+.badge-s0{background:#dbeafe;color:#1e40af;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600;}
+.badge-s9{background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600;}
+.delta-pos{color:#059669;font-weight:600;}
+.delta-neg{color:#dc2626;font-weight:600;}
+
+/* Filtros */
+.filtros{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.filtro-btn{padding:6px 14px;border-radius:7px;border:.5px solid #d1d5db;background:#fff;font-size:12px;cursor:pointer;color:#6b7280;}
+.filtro-btn.active{background:#1e3a5f;color:#fff;border-color:#1e3a5f;}
+
+/* Autoconfianza bars */
+.conf-grid{display:grid;gap:8px;}
+.conf-row{display:flex;align-items:center;gap:10px;}
+.conf-label{font-size:11px;color:#374151;width:200px;flex-shrink:0;text-align:right;}
+.conf-bars{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.conf-track{background:#f1f5f9;border-radius:99px;height:14px;overflow:hidden;position:relative;}
+.conf-fill{height:100%;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px;font-size:9px;font-weight:700;color:#fff;transition:width .5s;}
+.conf-fill-s0{background:#93c5fd;}
+.conf-fill-s9{background:#059669;}
+
+/* No data */
+.no-data{text-align:center;padding:40px;color:#9ca3af;font-size:13px;}
+.loading{text-align:center;padding:40px;color:#6b7280;font-size:13px;}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:16px;}
+.tab{padding:10px 20px;font-size:13px;font-weight:500;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;}
+.tab.active{color:#1e3a5f;border-bottom-color:#1e3a5f;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-title">Dashboard de Investigación — Simulación Pediátrica</div>
+    <div class="top-sub">Hospital Simulado · Universidad de La Sabana</div>
+  </div>
+  <div class="top-actions">
+    <span class="last-update" id="last-update"></span>
+    <button class="btn-refresh" onclick="cargarDatos()">⟳ Actualizar</button>
+    <button class="btn-export" onclick="exportarCSV()">⬇ Exportar CSV</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <h2>Dashboard Docente</h2>
+    <p>Acceso restringido al investigador principal. Ingresa la contraseña para ver los datos.</p>
+    <input type="password" id="pass-input" placeholder="Contraseña"
+           onkeydown="if(event.key==='Enter') verificarPass()">
+    <button class="btn-login" onclick="verificarPass()">Ingresar</button>
+    <div class="login-err" id="login-err">Contraseña incorrecta.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('resumen')">Resumen general</div>
+    <div class="tab" onclick="showTab('quiz')">Quiz de conocimiento</div>
+    <div class="tab" onclick="showTab('autoconfianza')">Autoconfianza</div>
+    <div class="tab" onclick="showTab('rubrica')">Rúbrica de desempeño</div>
+    <div class="tab" onclick="showTab('participantes')">Participantes</div>
+  </div>
+
+  <!-- TAB: RESUMEN -->
+  <div class="tab-content active" id="tab-resumen">
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="kpi"><div class="kpi-val" id="kpi-inscritos">—</div><div class="kpi-lbl">Participantes inscritos</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpi-quiz">—</div><div class="kpi-lbl">Quiz completados</div><div class="kpi-sub" id="kpi-quiz-sub"></div></div>
+      <div class="kpi"><div class="kpi-val" id="kpi-conf">—</div><div class="kpi-lbl">Encuestas completadas</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpi-rubrica">—</div><div class="kpi-lbl">Rúbricas completadas</div></div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Puntaje promedio quiz por grupo — S0 vs S9</div>
+        <canvas id="chart-grupos" height="200"></canvas>
+        <div class="no-data" id="no-grupos" style="display:none">Sin datos suficientes aún</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Distribución de puntajes — S0 vs S9</div>
+        <canvas id="chart-dist" height="200"></canvas>
+        <div class="no-data" id="no-dist" style="display:none">Sin datos suficientes aún</div>
+      </div>
+      <div class="chart-card full">
+        <div class="chart-title">Delta de mejora por tema del quiz</div>
+        <div class="chart-sub">Diferencia promedio S9 − S0 por sección temática</div>
+        <canvas id="chart-temas" height="120"></canvas>
+        <div class="no-data" id="no-temas" style="display:none">Se necesitan datos de S0 y S9 para calcular el delta</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: QUIZ -->
+  <div class="tab-content" id="tab-quiz">
+    <div class="filtros" id="filtros-quiz">
+      <button class="filtro-btn active" onclick="filtrarQuiz('todos',this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrarQuiz('S0',this)">Solo S0</button>
+      <button class="filtro-btn" onclick="filtrarQuiz('S9',this)">Solo S9</button>
+    </div>
+    <div class="tabla-wrap">
+      <table class="tabla" id="tabla-quiz">
+        <thead>
+          <tr>
+            <th>Código</th><th>Grupo</th><th>Momento</th><th>Puntaje</th><th>%</th>
+            <th>RCP</th><th>Taquiarritmias</th><th>Bradiarritmias</th><th>NRP</th><th>STABLE</th><th>Falla Vent.</th><th>IO/LP</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-quiz"></tbody>
+      </table>
+    </div>
+    <div class="no-data" id="no-quiz" style="display:none">No hay registros de quiz aún</div>
+
+    <div class="chart-card" style="margin-top:14px;">
+      <div class="chart-title">Puntaje por tema — Promedios S0 y S9</div>
+      <canvas id="chart-quiz-temas" height="150"></canvas>
+    </div>
+  </div>
+
+  <!-- TAB: AUTOCONFIANZA -->
+  <div class="tab-content" id="tab-autoconfianza">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Autoconfianza promedio por tema — S0 vs S9</div>
+        <canvas id="chart-conf-temas" height="220"></canvas>
+        <div class="no-data" id="no-conf" style="display:none">Sin datos aún</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Evolución de autoconfianza general por grupo</div>
+        <canvas id="chart-conf-grupos" height="220"></canvas>
+        <div class="no-data" id="no-conf2" style="display:none">Sin datos aún</div>
+      </div>
+    </div>
+    <div class="chart-card full" id="conf-bars-wrap">
+      <div class="chart-title">Perfil de autoconfianza por tema — S0 vs S9</div>
+      <div class="conf-grid" id="conf-bars"></div>
+    </div>
+  </div>
+
+  <!-- TAB: RÚBRICA -->
+  <div class="tab-content" id="tab-rubrica">
+    <div class="filtros" id="filtros-rubrica">
+      <button class="filtro-btn active" onclick="filtrarRubrica('todos',this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrarRubrica('rcp',this)">RCP</button>
+      <button class="filtro-btn" onclick="filtrarRubrica('arritmias',this)">Arritmias</button>
+      <button class="filtro-btn" onclick="filtrarRubrica('neonatal',this)">Neonatal</button>
+    </div>
+    <div class="tabla-wrap">
+      <table class="tabla" id="tabla-rubrica">
+        <thead>
+          <tr>
+            <th>Código</th><th>Grupo</th><th>Momento</th><th>Escenario</th>
+            <th>Parte A</th><th>Parte B</th><th>Total</th><th>%</th><th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-rubrica"></tbody>
+      </table>
+    </div>
+    <div class="no-data" id="no-rubrica" style="display:none">No hay rúbricas registradas aún</div>
+
+    <div class="charts-grid" style="margin-top:14px;">
+      <div class="chart-card">
+        <div class="chart-title">Puntaje rúbrica — S0 vs S9 por grupo</div>
+        <canvas id="chart-rubrica-grupos" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Habilidades técnicas vs no técnicas</div>
+        <canvas id="chart-rubrica-partes" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: PARTICIPANTES -->
+  <div class="tab-content" id="tab-participantes">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Participantes por grupo</div>
+        <canvas id="chart-grupos-bar" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Distribución por semestre</div>
+        <canvas id="chart-semestre" height="200"></canvas>
+      </div>
+    </div>
+    <div class="tabla-wrap">
+      <table class="tabla">
+        <thead><tr><th>Código</th><th>Nombre</th><th>Semestre</th><th>Grupo</th><th>Experiencia previa</th><th>Fecha inscripción</th></tr></thead>
+        <tbody id="tbody-participantes"></tbody>
+      </table>
+    </div>
+    <div class="no-data" id="no-part" style="display:none">No hay participantes inscritos aún</div>
+  </div>
+
+</div><!-- /dashboard -->
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const BIN_ID  = '6a60ddf5da38895dfe7fee60';
+const API_KEY = '$2a$10$yJBW6mob86NQpJ1uZ605EuNJnV3Znw/5Qbuloh1wS4cwb.UJBu9E2';
+const PASS    = 'simulacion2026';
+
+// ── DATOS GLOBALES ─────────────────────────────────────────────────────────
+let DATA = { inscripciones:[], registros:[], registros_autoconfianza:[], registros_rubrica:[] };
+let filtroQuiz = 'todos';
+let filtroRubrica = 'todos';
+let charts = {};
+
+const TEMAS_QUIZ = ['RCP','Taquiarritmias','Bradiarritmias','NRP','STABLE','Falla Vent.','IO/LP'];
+const SECCIONES_QUIZ = {
+  'Reanimación Cardiopulmonar Pediátrica':'RCP',
+  'Taquiarritmias en Pediatría':'Taquiarritmias',
+  'Bradiarritmias en Pediatría':'Bradiarritmias',
+  'Reanimación Neonatal (NRP)':'NRP',
+  'Estrategia STABLE':'STABLE',
+  'Falla Ventilatoria en Pediatría':'Falla Vent.',
+  'Punción Intraósea y Punción Lumbar':'IO/LP',
+};
+const TEMAS_CONF = [
+  'Reanimación Cardiopulmonar Pediátrica',
+  'Taquiarritmias en Pediatría',
+  'Bradiarritmias en Pediatría',
+  'Reanimación Neonatal (NRP 2025)',
+  'Estabilización Neonatal (STABLE)',
+  'Falla Ventilatoria en Pediatría',
+  'Punción Intraósea y Punción Lumbar',
+  'Autoconfianza general',
+];
+const COLORES = ['#1d4ed8','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#65a30d'];
+
+// ── LOGIN ──────────────────────────────────────────────────────────────────
+function verificarPass(){
+  const pass = document.getElementById('pass-input').value;
+  if(pass === PASS){
+    document.getElementById('login-wrap').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    cargarDatos();
+  } else {
+    document.getElementById('login-err').style.display='block';
+  }
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function showTab(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const ids=['resumen','quiz','autoconfianza','rubrica','participantes'];
+    t.classList.toggle('active', ids[i]===id);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>{
+    c.classList.toggle('active', c.id==='tab-'+id);
+  });
+}
+
+// ── CARGA DE DATOS ─────────────────────────────────────────────────────────
+async function cargarDatos(){
+  try{
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
+      headers:{'X-Master-Key':API_KEY}
+    });
+    const data = await res.json();
+    DATA = data.record || {inscripciones:[],registros:[],registros_autoconfianza:[],registros_rubrica:[]};
+    document.getElementById('last-update').textContent =
+      'Actualizado: '+new Date().toLocaleTimeString('es-CO');
+    renderTodo();
+  } catch(e){
+    console.error('Error cargando datos:',e);
+  }
+}
+
+function renderTodo(){
+  renderKPIs();
+  renderChartGrupos();
+  renderChartDist();
+  renderChartTemas();
+  renderTablaQuiz();
+  renderChartQuizTemas();
+  renderAutoconfianza();
+  renderRubrica();
+  renderParticipantes();
+}
+
+// ── KPIs ───────────────────────────────────────────────────────────────────
+function renderKPIs(){
+  const ins = DATA.inscripciones?.length || 0;
+  const quiz = DATA.registros?.length || 0;
+  const s0 = DATA.registros?.filter(r=>r.momento==='pre'||r.momento==='S0').length || 0;
+  const s9 = DATA.registros?.filter(r=>r.momento==='post'||r.momento==='S9').length || 0;
+  const conf = DATA.registros_autoconfianza?.length || 0;
+  const rub = DATA.registros_rubrica?.length || 0;
+
+  document.getElementById('kpi-inscritos').textContent = ins;
+  document.getElementById('kpi-quiz').textContent = quiz;
+  document.getElementById('kpi-quiz-sub').innerHTML =
+    `<span class="badge-s0">S0: ${s0}</span> <span class="badge-s9">S9: ${s9}</span>`;
+  document.getElementById('kpi-conf').textContent = conf;
+  document.getElementById('kpi-rubrica').textContent = rub;
+}
+
+// ── CHART GRUPOS ───────────────────────────────────────────────────────────
+function renderChartGrupos(){
+  const registros = DATA.registros || [];
+  const grupos = [...new Set(registros.map(r=>r.grupo))].sort();
+  if(!grupos.length){ document.getElementById('no-grupos').style.display=''; return; }
+
+  const promsS0=[], promsS9=[];
+  grupos.forEach(g=>{
+    const s0 = registros.filter(r=>r.grupo===g&&(r.momento==='pre'||r.momento==='S0'));
+    const s9 = registros.filter(r=>r.grupo===g&&(r.momento==='post'||r.momento==='S9'));
+    promsS0.push(s0.length?+(s0.reduce((a,b)=>a+(b.puntaje_total||b.puntaje_porcentaje||0),0)/s0.length).toFixed(1):null);
+    promsS9.push(s9.length?+(s9.reduce((a,b)=>a+(b.puntaje_total||b.puntaje_porcentaje||0),0)/s9.length).toFixed(1):null);
+  });
+
+  if(charts.grupos) charts.grupos.destroy();
+  const ctx = document.getElementById('chart-grupos').getContext('2d');
+  charts.grupos = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: grupos,
+      datasets:[
+        {label:'S0 — Pre-test',data:promsS0,backgroundColor:'#93c5fd',borderRadius:4},
+        {label:'S9 — Post-test',data:promsS9,backgroundColor:'#059669',borderRadius:4},
+      ]
+    },
+    options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,max:20}}}
+  });
+}
+
+// ── CHART DISTRIBUCIÓN ─────────────────────────────────────────────────────
+function renderChartDist(){
+  const registros = DATA.registros || [];
+  if(!registros.length){ document.getElementById('no-dist').style.display=''; return; }
+
+  const rangos = ['0-4','5-8','9-12','13-16','17-20'];
+  const limites = [[0,4],[5,8],[9,12],[13,16],[17,20]];
+  const s0 = registros.filter(r=>r.momento==='pre'||r.momento==='S0');
+  const s9 = registros.filter(r=>r.momento==='post'||r.momento==='S9');
+
+  const contarRango = (regs,lims) => lims.map(([min,max])=>
+    regs.filter(r=>(r.puntaje_total||0)>=min&&(r.puntaje_total||0)<=max).length
+  );
+
+  if(charts.dist) charts.dist.destroy();
+  const ctx = document.getElementById('chart-dist').getContext('2d');
+  charts.dist = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:rangos,
+      datasets:[
+        {label:'S0',data:contarRango(s0,limites),backgroundColor:'#93c5fd',borderRadius:4},
+        {label:'S9',data:contarRango(s9,limites),backgroundColor:'#6ee7b7',borderRadius:4},
+      ]
+    },
+    options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+}
+
+// ── CHART DELTA POR TEMAS ──────────────────────────────────────────────────
+function renderChartTemas(){
+  const registros = DATA.registros || [];
+  const s0 = registros.filter(r=>r.momento==='pre'||r.momento==='S0');
+  const s9 = registros.filter(r=>r.momento==='post'||r.momento==='S9');
+  if(!s0.length||!s9.length){ document.getElementById('no-temas').style.display=''; return; }
+
+  const temas = Object.keys(SECCIONES_QUIZ);
+  const deltas = temas.map(tema=>{
+    const short = SECCIONES_QUIZ[tema];
+    const promS0 = s0.reduce((a,r)=>a+((r.por_seccion?.[tema]?.correctas||0)/(r.por_seccion?.[tema]?.total||1)),0)/s0.length;
+    const promS9 = s9.reduce((a,r)=>a+((r.por_seccion?.[tema]?.correctas||0)/(r.por_seccion?.[tema]?.total||1)),0)/s9.length;
+    return +((promS9-promS0)*100).toFixed(1);
+  });
+
+  if(charts.temas) charts.temas.destroy();
+  const ctx = document.getElementById('chart-temas').getContext('2d');
+  charts.temas = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: Object.values(SECCIONES_QUIZ),
+      datasets:[{
+        label:'Delta S9-S0 (%)',
+        data:deltas,
+        backgroundColor:deltas.map(d=>d>=0?'#059669':'#dc2626'),
+        borderRadius:4
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:false,title:{display:true,text:'Δ Porcentaje de acierto'}}}
+    }
+  });
+}
+
+// ── TABLA QUIZ ─────────────────────────────────────────────────────────────
+function renderTablaQuiz(){
+  let registros = DATA.registros || [];
+  if(filtroQuiz!=='todos') registros=registros.filter(r=>
+    filtroQuiz==='S0'?(r.momento==='pre'||r.momento==='S0'):(r.momento==='post'||r.momento==='S9')
+  );
+  const tbody = document.getElementById('tbody-quiz');
+  if(!registros.length){
+    tbody.innerHTML=''; document.getElementById('no-quiz').style.display=''; return;
+  }
+  document.getElementById('no-quiz').style.display='none';
+  tbody.innerHTML = registros.map(r=>{
+    const mom = (r.momento==='pre'||r.momento==='S0')?
+      '<span class="badge-s0">S0</span>':'<span class="badge-s9">S9</span>';
+    const pct = r.puntaje_porcentaje||Math.round((r.puntaje_total||0)/20*100);
+    const color = pct>=80?'ok':pct>=60?'warn':'danger';
+    const fecha = r.timestamp?new Date(r.timestamp).toLocaleDateString('es-CO'):'—';
+    const temas = Object.keys(SECCIONES_QUIZ).map(t=>{
+      const d=r.por_seccion?.[t]; return d?`${d.correctas}/${d.total}`:'—';
+    }).join('</td><td>');
+    return `<tr>
+      <td><strong>${r.nombre||r.codigo||'—'}</strong></td>
+      <td>${r.grupo||'—'}</td>
+      <td>${mom}</td>
+      <td><strong class="${color}">${r.puntaje_total||'—'}/20</strong></td>
+      <td class="${color}">${pct}%</td>
+      <td>${temas}</td>
+      <td>${fecha}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filtrarQuiz(val,btn){
+  filtroQuiz=val;
+  document.querySelectorAll('#filtros-quiz .filtro-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTablaQuiz();
+}
+
+// ── CHART QUIZ TEMAS ───────────────────────────────────────────────────────
+function renderChartQuizTemas(){
+  const registros = DATA.registros || [];
+  const s0=registros.filter(r=>r.momento==='pre'||r.momento==='S0');
+  const s9=registros.filter(r=>r.momento==='post'||r.momento==='S9');
+  const temas=Object.keys(SECCIONES_QUIZ);
+  const labels=Object.values(SECCIONES_QUIZ);
+  const prom=(regs,tema)=>{
+    if(!regs.length)return null;
+    const vals=regs.map(r=>{const d=r.por_seccion?.[tema];return d?(d.correctas/d.total*100):0;});
+    return +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+  };
+  if(charts.quizTemas) charts.quizTemas.destroy();
+  const ctx=document.getElementById('chart-quiz-temas').getContext('2d');
+  charts.quizTemas=new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels,
+      datasets:[
+        {label:'S0',data:temas.map(t=>prom(s0,t)),borderColor:'#93c5fd',backgroundColor:'rgba(147,197,253,.2)',pointBackgroundColor:'#93c5fd'},
+        {label:'S9',data:temas.map(t=>prom(s9,t)),borderColor:'#059669',backgroundColor:'rgba(5,150,105,.2)',pointBackgroundColor:'#059669'},
+      ]
+    },
+    options:{plugins:{legend:{position:'bottom'}},scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:25}}}}
+  });
+}
+
+// ── AUTOCONFIANZA ──────────────────────────────────────────────────────────
+function renderAutoconfianza(){
+  const regs=DATA.registros_autoconfianza||[];
+  const s0=regs.filter(r=>r.momento==='S0');
+  const s9=regs.filter(r=>r.momento==='S9');
+
+  // Chart radar por temas
+  const promConf=(arr,tema)=>{
+    const vals=arr.map(r=>r.respuestas?.[tema]||0).filter(v=>v>0);
+    return vals.length?+(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2):null;
+  };
+  if(charts.confTemas) charts.confTemas.destroy();
+  const ctx1=document.getElementById('chart-conf-temas').getContext('2d');
+  charts.confTemas=new Chart(ctx1,{
+    type:'radar',
+    data:{
+      labels:TEMAS_CONF.map(t=>t.length>20?t.substring(0,20)+'…':t),
+      datasets:[
+        {label:'S0',data:TEMAS_CONF.map(t=>promConf(s0,t)),borderColor:'#93c5fd',backgroundColor:'rgba(147,197,253,.2)',pointBackgroundColor:'#93c5fd'},
+        {label:'S9',data:TEMAS_CONF.map(t=>promConf(s9,t)),borderColor:'#059669',backgroundColor:'rgba(5,150,105,.2)',pointBackgroundColor:'#059669'},
+      ]
+    },
+    options:{plugins:{legend:{position:'bottom'}},scales:{r:{min:1,max:5,ticks:{stepSize:1}}}}
+  });
+
+  // Chart línea por grupos
+  const grupos=[...new Set(regs.map(r=>r.grupo))].sort();
+  if(charts.confGrupos) charts.confGrupos.destroy();
+  const ctx2=document.getElementById('chart-conf-grupos').getContext('2d');
+  charts.confGrupos=new Chart(ctx2,{
+    type:'bar',
+    data:{
+      labels:grupos,
+      datasets:[
+        {label:'S0 — Autoconfianza general',
+          data:grupos.map(g=>{const v=s0.filter(r=>r.grupo===g).map(r=>r.autoconfianza_general||r.media_total||0);return v.length?+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(2):null;}),
+          backgroundColor:'#93c5fd',borderRadius:4},
+        {label:'S9 — Autoconfianza general',
+          data:grupos.map(g=>{const v=s9.filter(r=>r.grupo===g).map(r=>r.autoconfianza_general||r.media_total||0);return v.length?+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(2):null;}),
+          backgroundColor:'#059669',borderRadius:4},
+      ]
+    },
+    options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:1,max:5}}}
+  });
+
+  // Barras de perfil
+  const barsWrap=document.getElementById('conf-bars');
+  barsWrap.innerHTML=TEMAS_CONF.map(tema=>{
+    const v0=promConf(s0,tema)||0;
+    const v9=promConf(s9,tema)||0;
+    const label=tema.length>28?tema.substring(0,28)+'…':tema;
+    return `<div class="conf-row">
+      <div class="conf-label">${label}</div>
+      <div class="conf-bars">
+        <div class="conf-track">
+          <div class="conf-fill conf-fill-s0" style="width:${v0/5*100}%">${v0||''}</div>
+        </div>
+        <div class="conf-track">
+          <div class="conf-fill conf-fill-s9" style="width:${v9/5*100}%">${v9||''}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RÚBRICA ────────────────────────────────────────────────────────────────
+function renderRubrica(){
+  let regs=DATA.registros_rubrica||[];
+  if(filtroRubrica!=='todos') regs=regs.filter(r=>r.escenario===filtroRubrica);
+  const tbody=document.getElementById('tbody-rubrica');
+  if(!regs.length){
+    tbody.innerHTML='';document.getElementById('no-rubrica').style.display='';return;
+  }
+  document.getElementById('no-rubrica').style.display='none';
+  tbody.innerHTML=regs.map(r=>{
+    const mom=(r.momento==='S0')?'<span class="badge-s0">S0</span>':'<span class="badge-s9">S9</span>';
+    const pct=r.porcentaje||Math.round((r.puntaje_total||0)/(r.maximo_total||44)*100);
+    const color=pct>=75?'ok':pct>=50?'warn':'danger';
+    const fecha=r.timestamp?new Date(r.timestamp).toLocaleDateString('es-CO'):'—';
+    return `<tr>
+      <td><strong>${r.codigo||'—'}</strong></td>
+      <td>${r.grupo||'—'}</td><td>${mom}</td>
+      <td>${r.escenario_nombre||r.escenario||'—'}</td>
+      <td>${r.puntaje_A||'—'}/${r.maximo_A||24}</td>
+      <td>${r.puntaje_B||'—'}/${r.maximo_B||20}</td>
+      <td><strong class="${color}">${r.puntaje_total||'—'}/${r.maximo_total||44}</strong></td>
+      <td class="${color}">${pct}%</td>
+      <td>${fecha}</td>
+    </tr>`;
+  }).join('');
+
+  // Charts rúbrica
+  const grupos=[...new Set((DATA.registros_rubrica||[]).map(r=>r.grupo))].sort();
+  const s0r=(DATA.registros_rubrica||[]).filter(r=>r.momento==='S0');
+  const s9r=(DATA.registros_rubrica||[]).filter(r=>r.momento==='S9');
+  const promR=(arr,g)=>{const v=arr.filter(r=>r.grupo===g).map(r=>r.puntaje_total||0);return v.length?+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):null;};
+
+  if(charts.rubGrupos) charts.rubGrupos.destroy();
+  const ctx3=document.getElementById('chart-rubrica-grupos').getContext('2d');
+  charts.rubGrupos=new Chart(ctx3,{
+    type:'bar',
+    data:{labels:grupos,datasets:[
+      {label:'S0',data:grupos.map(g=>promR(s0r,g)),backgroundColor:'#93c5fd',borderRadius:4},
+      {label:'S9',data:grupos.map(g=>promR(s9r,g)),backgroundColor:'#059669',borderRadius:4},
+    ]},
+    options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,max:44}}}
+  });
+
+  // Partes A vs B
+  const promParte=(arr,parte)=>{const v=arr.map(r=>parte==='A'?(r.puntaje_A||0):(r.puntaje_B||0));return v.length?+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;};
+  if(charts.rubPartes) charts.rubPartes.destroy();
+  const ctx4=document.getElementById('chart-rubrica-partes').getContext('2d');
+  charts.rubPartes=new Chart(ctx4,{
+    type:'doughnut',
+    data:{
+      labels:['A — No técnicas S0','A — No técnicas S9','B — Técnicas S0','B — Técnicas S9'],
+      datasets:[{data:[promParte(s0r,'A'),promParte(s9r,'A'),promParte(s0r,'B'),promParte(s9r,'B')],
+        backgroundColor:['#bfdbfe','#1d4ed8','#bbf7d0','#059669']}]
+    },
+    options:{plugins:{legend:{position:'bottom'}}}
+  });
+}
+
+function filtrarRubrica(val,btn){
+  filtroRubrica=val;
+  document.querySelectorAll('#filtros-rubrica .filtro-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRubrica();
+}
+
+// ── PARTICIPANTES ──────────────────────────────────────────────────────────
+function renderParticipantes(){
+  const ins=DATA.inscripciones||[];
+  const tbody=document.getElementById('tbody-participantes');
+  if(!ins.length){tbody.innerHTML='';document.getElementById('no-part').style.display='';return;}
+  document.getElementById('no-part').style.display='none';
+
+  tbody.innerHTML=ins.map(r=>{
+    const fecha=r.timestamp?new Date(r.timestamp).toLocaleDateString('es-CO'):'—';
+    return `<tr>
+      <td><strong>${r.codigo||'—'}</strong></td>
+      <td>${r.nombre||'—'}</td>
+      <td>${r.semestre||'—'}</td>
+      <td>${r.grupo||'—'}</td>
+      <td>${r.experiencia_previa||'—'}</td>
+      <td>${fecha}</td>
+    </tr>`;
+  }).join('');
+
+  // Chart por grupo
+  const grupos=[...new Set(ins.map(r=>r.grupo||r.grupo_num))].sort();
+  if(charts.gruposBar) charts.gruposBar.destroy();
+  const ctx5=document.getElementById('chart-grupos-bar').getContext('2d');
+  charts.gruposBar=new Chart(ctx5,{
+    type:'bar',
+    data:{labels:grupos,datasets:[{
+      label:'Participantes',
+      data:grupos.map(g=>ins.filter(r=>(r.grupo||r.grupo_num)===g).length),
+      backgroundColor:COLORES,borderRadius:6
+    }]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+
+  // Chart por semestre
+  const semestres=[...new Set(ins.map(r=>r.semestre))].sort();
+  if(charts.semestre) charts.semestre.destroy();
+  const ctx6=document.getElementById('chart-semestre').getContext('2d');
+  charts.semestre=new Chart(ctx6,{
+    type:'pie',
+    data:{labels:semestres,datasets:[{
+      data:semestres.map(s=>ins.filter(r=>r.semestre===s).length),
+      backgroundColor:COLORES
+    }]},
+    options:{plugins:{legend:{position:'bottom'}}}
+  });
+}
+
+// ── EXPORTAR CSV ───────────────────────────────────────────────────────────
+function exportarCSV(){
+  const sheets = {
+    'inscripciones': DATA.inscripciones||[],
+    'quiz': DATA.registros||[],
+    'autoconfianza': DATA.registros_autoconfianza||[],
+    'rubrica': DATA.registros_rubrica||[],
+  };
+
+  Object.entries(sheets).forEach(([nombre, regs])=>{
+    if(!regs.length) return;
+    const headers = Object.keys(regs[0]).filter(k=>typeof regs[0][k]!=='object');
+    const rows = regs.map(r=>headers.map(h=>`"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+    const csv = [headers.join(','),...rows].join('\n');
+    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url;
+    a.download=`simulacion_${nombre}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+</script>
+</body>
+</html>
