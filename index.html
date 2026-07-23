@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Simulado — Rotación Pediátrica</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#111827;min-height:100vh;}
+
+/* Header */
+.header{background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);color:#fff;padding:32px 24px;text-align:center;}
+.header-logo{width:72px;height:72px;background:rgba(255,255,255,.15);border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:32px;}
+.header h1{font-size:22px;font-weight:700;margin-bottom:4px;}
+.header-sub{font-size:13px;opacity:.8;margin-bottom:4px;}
+.header-guias{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+.guia-badge{background:rgba(255,255,255,.15);border:.5px solid rgba(255,255,255,.3);padding:4px 12px;border-radius:99px;font-size:11px;font-weight:500;}
+
+/* Sesión actual */
+.sesion-banner{background:#fbbf24;color:#1e3a5f;padding:10px 24px;text-align:center;font-size:13px;font-weight:600;}
+
+/* Container */
+.container{max-width:860px;margin:0 auto;padding:24px 16px;}
+
+/* Sección */
+.section-label{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin:24px 0 10px;display:flex;align-items:center;gap:8px;}
+.section-label::after{content:'';flex:1;height:1px;background:#e5e7eb;}
+
+/* Cards de instrumentos */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:4px;}
+.card{background:#fff;border-radius:12px;padding:18px 20px;border:.5px solid #e5e7eb;text-decoration:none;color:inherit;display:block;transition:transform .15s,box-shadow .15s;}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1);}
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.card-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.card-title{font-size:14px;font-weight:600;color:#111827;}
+.card-sub{font-size:11px;color:#6b7280;margin-top:1px;}
+.card-desc{font-size:12px;color:#6b7280;line-height:1.55;margin-bottom:10px;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;}
+.card-tag{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;}
+.tag-s0s9{background:#dbeafe;color:#1e40af;}
+.tag-s0{background:#fef3c7;color:#92400e;}
+.tag-docente{background:#f3e8ff;color:#6b21a8;}
+.tag-libre{background:#d1fae5;color:#065f46;}
+.card-arrow{font-size:16px;color:#d1d5db;}
+
+/* Cards simuladores */
+.sim-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;}
+.sim-card{background:#fff;border-radius:10px;padding:14px 16px;border:.5px solid #e5e7eb;text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;transition:transform .15s,box-shadow .15s;}
+.sim-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08);}
+.sim-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.sim-info{flex:1;}
+.sim-title{font-size:13px;font-weight:600;color:#111827;}
+.sim-sub{font-size:10px;color:#6b7280;margin-top:1px;}
+.sim-arrow{font-size:14px;color:#d1d5db;}
+
+/* Pasos S0/S9 */
+.pasos-wrap{background:#fff;border-radius:12px;border:.5px solid #e5e7eb;padding:18px 20px;margin-bottom:14px;}
+.pasos-title{font-size:13px;font-weight:600;color:#374151;margin-bottom:12px;}
+.pasos-row{display:flex;gap:0;align-items:stretch;}
+.paso{flex:1;text-align:center;padding:10px 8px;position:relative;}
+.paso:not(:last-child)::after{content:'→';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:#d1d5db;font-size:14px;}
+.paso-num{width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;}
+.paso-label{font-size:10px;color:#374151;font-weight:500;line-height:1.3;}
+.paso-sub{font-size:9px;color:#9ca3af;margin-top:2px;}
+
+/* Info box */
+.info-box{background:#eff6ff;border:.5px solid #93c5fd;border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:12px;color:#1e40af;line-height:1.7;}
+.info-box strong{display:block;margin-bottom:4px;font-size:13px;}
+
+/* Footer */
+.footer{text-align:center;padding:24px;font-size:11px;color:#9ca3af;border-top:.5px solid #e5e7eb;margin-top:20px;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">🏥</div>
+  <h1>Rotación de Simulación Clínica</h1>
+  <div class="header-sub">Pediatría de Urgencias y Reanimación Neonatal</div>
+  <div class="header-sub">Hospital Simulado · Universidad de La Sabana</div>
+  <div class="header-guias">
+    <span class="guia-badge">PALS 2025 AHA/AAP</span>
+    <span class="guia-badge">NRP 2025 AHA/AAP</span>
+    <span class="guia-badge">9 sesiones · S0–S9</span>
+  </div>
+</div>
+
+<!-- BANNER SESIÓN -->
+<div class="sesion-banner">
+  📌 Recuerda tu código de participante — lo necesitas en todos los instrumentos
+</div>
+
+<div class="container">
+
+  <!-- PASOS DE LA ROTACIÓN -->
+  <div class="pasos-wrap">
+    <div class="pasos-title">Flujo de la rotación</div>
+    <div class="pasos-row">
+      <div class="paso">
+        <div class="paso-num" style="background:#1e3a5f;">1</div>
+        <div class="paso-label">Inscripción</div>
+        <div class="paso-sub">Obtén tu código</div>
+      </div>
+      <div class="paso">
+        <div class="paso-num" style="background:#d97706;">2</div>
+        <div class="paso-label">S0 — Inicio</div>
+        <div class="paso-sub">Quiz + Encuesta</div>
+      </div>
+      <div class="paso">
+        <div class="paso-num" style="background:#2563eb;">3</div>
+        <div class="paso-label">S1–S8</div>
+        <div class="paso-sub">Talleres + Simuladores</div>
+      </div>
+      <div class="paso">
+        <div class="paso-num" style="background:#059669;">4</div>
+        <div class="paso-label">S9 — Cierre</div>
+        <div class="paso-sub">Quiz + Encuesta</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTRUMENTOS S0 Y S9 -->
+  <div class="section-label">Instrumentos de evaluación — S0 y S9</div>
+
+  <div class="cards-grid">
+    <a class="card" href="formulario_inscripcion_simulacion.html">
+      <div class="card-header">
+        <div class="card-icon" style="background:#dbeafe;">🎫</div>
+        <div>
+          <div class="card-title">Formulario de inscripción</div>
+          <div class="card-sub">Primer paso de la rotación</div>
+        </div>
+      </div>
+      <div class="card-desc">Regístrate al inicio de la rotación y recibe tu <strong>código de participante</strong> — lo usarás en todos los instrumentos.</div>
+      <div class="card-footer">
+        <span class="card-tag tag-s0">Solo una vez</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a class="card" href="quiz_prepost_simulacion.html">
+      <div class="card-header">
+        <div class="card-icon" style="background:#fef3c7;">📝</div>
+        <div>
+          <div class="card-title">Quiz de conocimiento clínico</div>
+          <div class="card-sub">20 preguntas · PALS 2025 + NRP 2025</div>
+        </div>
+      </div>
+      <div class="card-desc">Cuestionario de selección múltiple sobre los 7 temas de la rotación. Se aplica al <strong>inicio (S0)</strong> y al <strong>final (S9)</strong> con el mismo instrumento.</div>
+      <div class="card-footer">
+        <span class="card-tag tag-s0s9">S0 y S9</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a class="card" href="encuesta_autoconfianza_simulacion.html">
+      <div class="card-header">
+        <div class="card-icon" style="background:#d1fae5;">💪</div>
+        <div>
+          <div class="card-title">Encuesta de autoconfianza</div>
+          <div class="card-sub">8 ítems · Escala Likert 1–5</div>
+        </div>
+      </div>
+      <div class="card-desc">Mide tu nivel de confianza en cada tema de la rotación. Es anónima y no afecta tu nota. Se aplica al <strong>inicio (S0)</strong> y al <strong>final (S9)</strong>.</div>
+      <div class="card-footer">
+        <span class="card-tag tag-s0s9">S0 y S9</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- NOTA IMPORTANTE -->
+  <div class="info-box" style="margin-top:12px;">
+    <strong>📌 Importante sobre las evaluaciones</strong>
+    Las evaluaciones de S0 y S9 son de carácter <strong>formativo</strong> — no afectan tu nota de rotación. Su objetivo es medir tu progreso y contribuir a la investigación del programa. Se espera honestidad en tus respuestas, especialmente en S0 donde la idea es conocer tu punto de partida real.
+  </div>
+
+  <!-- SIMULADORES -->
+  <div class="section-label">Simuladores digitales — Estudio asíncrono</div>
+
+  <div class="info-box">
+    <strong>💡 ¿Cómo usar los simuladores?</strong>
+    Úsalos <strong>antes de cada sesión presencial</strong> para llegar con los conceptos básicos claros. Puedes repetirlos todas las veces que quieras. No son obligatorios ni se evalúan directamente — son preparación, no sustitución del taller.
+  </div>
+
+  <div class="sim-grid">
+    <a class="sim-card" href="simulador_pals_2025.html">
+      <div class="sim-icon" style="background:#fee2e2;">❤️</div>
+      <div class="sim-info">
+        <div class="sim-title">RCP Pediátrica</div>
+        <div class="sim-sub">PALS 2025 · Caso PCR en lactante · 4 fases</div>
+      </div>
+      <span class="sim-arrow">→</span>
+    </a>
+
+    <a class="sim-card" href="simulador_taquiarritmias_pals2025.html">
+      <div class="sim-icon" style="background:#fef3c7;">⚡</div>
+      <div class="sim-info">
+        <div class="sim-title">Taquiarritmias</div>
+        <div class="sim-sub">PALS 2025 · 6 casos con ECG animado</div>
+      </div>
+      <span class="sim-arrow">→</span>
+    </a>
+
+    <a class="sim-card" href="simulador_bradiarritmias_pals2025.html">
+      <div class="sim-icon" style="background:#dbeafe;">🫀</div>
+      <div class="sim-info">
+        <div class="sim-title">Bradiarritmias</div>
+        <div class="sim-sub">PALS 2025 · 4 casos del algoritmo</div>
+      </div>
+      <span class="sim-arrow">→</span>
+    </a>
+
+    <a class="sim-card" href="simulador_reanimacion_neonatal_nrp2025.html">
+      <div class="sim-icon" style="background:#f0fdf4;">🍼</div>
+      <div class="sim-info">
+        <div class="sim-title">Reanimación Neonatal</div>
+        <div class="sim-sub">NRP 2025 · Caso progresivo 3 fases</div>
+      </div>
+      <span class="sim-arrow">→</span>
+    </a>
+
+    <a class="sim-card" href="simulador_falla_ventilatoria_pediatrica.html">
+      <div class="sim-icon" style="background:#fdf4ff;">🫁</div>
+      <div class="sim-info">
+        <div class="sim-title">Falla Ventilatoria</div>
+        <div class="sim-sub">BVM · Indicaciones de intubación · VM básica</div>
+      </div>
+      <span class="sim-arrow">→</span>
+    </a>
+
+    <a class="sim-card" href="simulador_puncion_io_lumbar.html">
+      <div class="sim-icon" style="background:#eff6ff;">💉</div>
+      <div class="sim-info">
+        <div class="sim-title">Punción IO y Lumbar</div>
+        <div class="sim-sub">Indicaciones · Técnica · Interpretación LCR</div>
+      </div>
+      <span class="sim-arrow">→</span>
+    </a>
+  </div>
+
+  <!-- FOOTER INFO -->
+  <div style="margin-top:20px;" class="info-box">
+    <strong>📞 Contacto</strong>
+    Dr. Eduardo Acuña De La Rosa · Docente responsable · Hospital Simulado<br>
+    Universidad de La Sabana · Departamento de Pediatría y Simulación Clínica<br>
+    Guías de referencia: PALS 2025 AHA/AAP · NRP 2025 AHA/AAP (9ª edición)
+  </div>
+
+</div>
+
+<div class="footer">
+  Hospital Simulado · Universidad de La Sabana · 2026 · Rotación de Simulación Clínica en Pediatría de Urgencias
+</div>
+
+</body>
+</html>
