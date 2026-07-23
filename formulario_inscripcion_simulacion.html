@@ -217,7 +217,7 @@ async function inscribir(){
   let registros = [];
 
   // Si JSONBin está configurado, obtener el número secuencial real
-  if(BIN_ID === 'NO_CONFIGURADO'){
+  if(BIN_ID !== 'NO_CONFIGURADO'){
     try {
       const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
         headers:{'X-Master-Key': API_KEY}
@@ -256,15 +256,26 @@ async function inscribir(){
   };
 
   // Guardar en JSONBin o localStorage
-  if(BIN_ID === 'NO_CONFIGURADO'){
+  if(BIN_ID !== 'NO_CONFIGURADO'){
     try{
-      registros.push(registro);
-      await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+      // Leer bin completo para preservar todas las claves
+      const binRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
+        headers:{'X-Master-Key': API_KEY}
+      });
+      const binData = await binRes.json();
+      const binActual = binData.record || {};
+      const inscripcionesActuales = binActual.inscripciones || [];
+      inscripcionesActuales.push(registro);
+      const payloadFinal = Object.assign({}, binActual, {inscripciones: inscripcionesActuales});
+      const putRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
         method:'PUT',
         headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
-        body: JSON.stringify({inscripciones: registros})
+        body: JSON.stringify(payloadFinal)
       });
+      const putData = await putRes.json();
+      console.log('PUT result:', putData);
     } catch(e){
+      console.error('Error JSONBin:', e);
       guardarLocal(registro);
     }
   } else {
@@ -290,7 +301,7 @@ function mostrarCodigo(codigo, nombre, grupo){
     `${nombre}  ·  Grupo ${grupo}`;
 
   const envioEl = document.getElementById('status-envio');
-  if(BIN_ID === 'NO_CONFIGURADO'){
+  if(BIN_ID !== 'NO_CONFIGURADO'){
     envioEl.innerHTML='<div class="status status-warn">⚠ JSONBin no configurado — el registro se guardó localmente en este dispositivo.</div>';
   } else {
     envioEl.innerHTML='<div class="status status-ok">✓ Inscripción registrada correctamente.</div>';
