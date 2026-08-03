@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Vía Aérea Pediátrica — Actividad Asíncrona</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#111827;min-height:100vh;}
+.top-bar{background:#1e3a5f;color:#fff;padding:13px 22px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.top-title{font-size:14px;font-weight:500;}
+.top-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.badge{background:#dbeafe;color:#1e40af;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;}
+.timer{font-family:monospace;font-size:20px;font-weight:600;color:#fbbf24;}
+.timer-lbl{font-size:10px;opacity:.6;text-align:right;}
+
+/* Módulos nav */
+.mod-nav{display:flex;gap:0;overflow-x:auto;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:57px;z-index:99;}
+.mod-btn{padding:10px 16px;font-size:11px;font-weight:500;color:#6b7280;border:none;background:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;}
+.mod-btn.active{color:#1d4ed8;border-bottom-color:#1d4ed8;background:#f0f7ff;}
+.mod-btn.done{color:#059669;border-bottom-color:#059669;}
+
+.container{max-width:800px;margin:0 auto;padding:20px 16px;}
+
+/* Módulo header */
+.mod-header{background:#1e3a5f;border-radius:10px;padding:16px 20px;margin-bottom:16px;color:#fff;}
+.mod-header h2{font-size:16px;font-weight:600;margin-bottom:4px;}
+.mod-header p{font-size:12px;opacity:.8;}
+
+/* Cards de contenido */
+.content-card{background:#fff;border:.5px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin-bottom:12px;}
+.content-card h3{font-size:13px;font-weight:600;color:#1e3a5f;margin-bottom:8px;}
+.content-card p{font-size:13px;color:#374151;line-height:1.65;margin-bottom:6px;}
+
+/* Tabla compacta */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0;}
+.tbl th{background:#1e3a5f;color:#fff;padding:6px 10px;text-align:left;font-weight:500;}
+.tbl td{padding:5px 10px;border-bottom:.5px solid #e5e7eb;}
+.tbl tr:nth-child(even) td{background:#f9fafb;}
+.tbl td:first-child{font-weight:600;color:#1e3a5f;}
+
+/* Alert boxes */
+.alert{border-radius:8px;padding:10px 14px;margin:10px 0;font-size:12px;line-height:1.6;}
+.alert-blue{background:#dbeafe;border:.5px solid #93c5fd;color:#1e40af;}
+.alert-green{background:#d1fae5;border:.5px solid #6ee7b7;color:#065f46;}
+.alert-amber{background:#fef3c7;border:.5px solid #fcd34d;color:#92400e;}
+.alert-red{background:#fee2e2;border:.5px solid #fca5a5;color:#991b1b;}
+.alert-purple{background:#ede9fe;border:.5px solid #c4b5fd;color:#5b21b6;}
+
+/* Calculadora */
+.calc-wrap{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:14px;margin:10px 0;}
+.calc-row{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+.calc-row label{font-size:12px;font-weight:500;color:#374151;min-width:80px;}
+.calc-input{padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:13px;width:100px;}
+.calc-input:focus{outline:none;border-color:#1d4ed8;}
+.btn-calc{background:#1e3a5f;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;}
+.btn-calc:hover{background:#1d4ed8;}
+.calc-result{background:#fff;border:.5px solid #e5e7eb;border-radius:6px;padding:10px 14px;margin-top:8px;font-size:12px;}
+.calc-result-val{font-size:16px;font-weight:700;color:#1e3a5f;}
+
+/* Preguntas */
+.q-label{font-size:11px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.q-text{font-size:13px;font-weight:500;margin-bottom:10px;line-height:1.5;color:#111827;}
+.opts{display:flex;flex-direction:column;gap:6px;}
+.opt{background:#fff;border:.5px solid #d1d5db;border-radius:7px;padding:9px 13px;cursor:pointer;font-size:12px;line-height:1.4;display:flex;gap:8px;align-items:flex-start;transition:background .1s;}
+.opt:hover:not(.disabled){background:#f9fafb;}
+.opt.disabled{opacity:.5;cursor:not-allowed;}
+.opt.correct{border-color:#6ee7b7;background:#d1fae5;color:#065f46;}
+.opt.incorrect{border-color:#fca5a5;background:#fee2e2;color:#991b1b;}
+.opt-letter{font-size:11px;font-weight:700;min-width:16px;flex-shrink:0;margin-top:1px;}
+.opt.correct .opt-letter{color:#065f46;}
+.opt.incorrect .opt-letter{color:#991b1b;}
+.fb{border-radius:7px;padding:9px 13px;font-size:12px;line-height:1.6;margin-top:10px;border:.5px solid;}
+.fb-ok{background:#d1fae5;color:#065f46;border-color:#6ee7b7;}
+.fb-err{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
+.key-box{background:#eff6ff;border:.5px solid #93c5fd;border-radius:7px;padding:9px 13px;margin-top:8px;font-size:11.5px;color:#1e40af;line-height:1.6;}
+
+/* Botones navegación */
+.btn-next{background:#1e3a5f;color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;margin-top:10px;width:100%;}
+.btn-next:hover{background:#1d4ed8;}
+
+/* Resultado final */
+.final-card{background:#fff;border-radius:12px;padding:28px;text-align:center;border:.5px solid #e5e7eb;}
+.final-score{font-size:52px;font-weight:700;margin:10px 0 4px;}
+.final-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+.fg-item{background:#f9fafb;border-radius:8px;padding:10px;}
+.fg-val{font-size:20px;font-weight:700;color:#1e3a5f;}
+.fg-lbl{font-size:10px;color:#6b7280;margin-top:2px;}
+.summary-item{font-size:12px;padding:4px 0;border-bottom:.5px solid #e5e7eb;text-align:left;}
+.summary-item:last-child{border-bottom:none;}
+.btn-restart{background:#fff;color:#374151;border:.5px solid #d1d5db;padding:10px 20px;border-radius:7px;font-size:12px;cursor:pointer;width:100%;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-title">Actividad Asíncrona — Vía Aérea Pediátrica &nbsp;<span class="badge">Taller S6</span></div>
+    <div class="top-sub">Hospital Simulado · Universidad de La Sabana · PALS 2025</div>
+  </div>
+  <div style="text-align:right">
+    <div class="timer" id="timer">00:00</div>
+    <div class="timer-lbl">tiempo de estudio</div>
+  </div>
+</div>
+
+<!-- NAV DE MÓDULOS -->
+<div class="mod-nav" id="mod-nav"></div>
+
+<div class="container" id="main"></div>
+
+<script>
+// ── ESTADO ────────────────────────────────────────────────────────────────
+let modActual = 0;
+let qStep = 0;
+let answered = false;
+let scores = { correct:0, total:0 };
+let modScores = [0,0,0,0,0,0,0];
+let timerSec = 0;
+let timerInt = null;
+
+// ── MÓDULOS ───────────────────────────────────────────────────────────────
+const MODS = [
+  { id:'sem', label:'Semiología', emoji:'🫁' },
+  { id:'ori', label:'Origen FV', emoji:'🧠' },
+  { id:'o2',  label:'Dispositivos O₂', emoji:'💨' },
+  { id:'vpp', label:'VPP', emoji:'🫧' },
+  { id:'tot', label:'Cálculos TOT', emoji:'📏' },
+  { id:'isr', label:'ISR', emoji:'💉' },
+  { id:'vm',  label:'VM Básica', emoji:'⚙️' },
+];
+
+// ── CONTENIDO POR MÓDULO ──────────────────────────────────────────────────
+
+const CONTENIDO = {
+
+// ─ MÓDULO 1: SEMIOLOGÍA ──────────────────────────────────────────────────
+sem: {
+  titulo:'Semiología Respiratoria Pediátrica',
+  subtitulo:'Reconocimiento del patrón — signos de esfuerzo y su significado',
+  teoria:`
+  <div class="content-card">
+    <h3>Inspección — signos de esfuerzo respiratorio</h3>
+    <table class="tbl">
+      <tr><th>Signo</th><th>Descripción</th><th>Significado</th></tr>
+      <tr><td>Retracción subcostal</td><td>Hundimiento bajo el reborde costal</td><td>Esfuerzo aumentado — signo precoz</td></tr>
+      <tr><td>Retracción intercostal</td><td>Hundimiento entre espacios costales</td><td>Obstrucción o rigidez moderada</td></tr>
+      <tr><td>Retracción supraesternal</td><td>Hundimiento encima del esternón</td><td>Obstrucción VAS significativa</td></tr>
+      <tr><td>Aleteo nasal</td><td>Apertura rítmica de las narinas</td><td>Esfuerzo aumentado — frecuente en lactantes</td></tr>
+      <tr><td>Respiración paradójica</td><td>Tórax se hunde al inspirar</td><td>AGOTAMIENTO muscular — inminencia</td></tr>
+      <tr><td>Quejido espiratorio</td><td>Ruido al final de la espiración</td><td>Auto-PEEP protector — signo de gravedad</td></tr>
+      <tr><td>Posición en trípode</td><td>Sentado con brazos apoyados</td><td>Obstrucción severa — maximiza apertura VAS</td></tr>
+    </table>
+  </div>
+  <div class="content-card">
+    <h3>Auscultación — hallazgos y su origen</h3>
+    <table class="tbl">
+      <tr><th>Hallazgo</th><th>Origen</th><th>Diagnóstico orientador</th></tr>
+      <tr><td>Sibilancias espiratorias</td><td>Obstrucción difusa VAI</td><td>Asma · bronquiolitis · broncoespasmo</td></tr>
+      <tr><td>Estridor inspiratorio</td><td>Obstrucción VAS (sobre glotis)</td><td>Crup · cuerpo extraño · angioedema</td></tr>
+      <tr><td>Estridor bifásico</td><td>Obstrucción glótica o subglótica</td><td>Epiglotitis · cuerpo extraño subglótico</td></tr>
+      <tr><td>Crépitos finos</td><td>Apertura de alvéolos colapsados</td><td>Neumonía · edema pulmonar · atelectasia</td></tr>
+      <tr><td>Roncus</td><td>Secreciones en vía aérea central</td><td>Bronquitis · infección respiratoria</td></tr>
+      <tr><td>Silencio auscultatorio</td><td>Sin flujo de aire en la zona</td><td>EMERGENCIA: asma severa · neumotórax</td></tr>
+    </table>
+    <div class="alert alert-red">
+      <strong>Regla de oro:</strong> Sibilancias = obstrucción INFERIOR · Estridor = obstrucción SUPERIOR · Silencio = EMERGENCIA
+    </div>
+  </div>`,
+  preguntas: [
+    {
+      label:'Caso 1 — Semiología',
+      q:'Sebastián, 2 años. Fiebre 38.5°C, tos perruna, estridor INSPIRATORIO, sin babeo, afónico. ¿Qué nivel anatómico indica este patrón?',
+      opts:[
+        {t:'Vía aérea inferior — el estridor indica broncoespasmo difuso',ok:false,fb:'El estridor inspiratorio indica obstrucción de vía aérea SUPERIOR (sobre la glotis o a nivel laríngeo). El broncoespasmo produce sibilancias ESPIRATORIAS, no estridor.'},
+        {t:'Vía aérea superior (laringotraqueal) — el estridor inspiratorio indica obstrucción sobre la glotis',ok:true,fb:'Correcto. El patrón de tos perruna + estridor inspiratorio + afonía es clásico de laringotraqueítis (crup viral). La obstrucción es a nivel subglótico. El estridor inspiratorio siempre señala la vía aérea SUPERIOR.'},
+        {t:'Parénquima pulmonar — la fiebre y la tos indican neumonía',ok:false,fb:'La neumonía produce crépitos y síndrome de condensación, no estridor. El estridor es una señal de la VAS, no del parénquima.'},
+        {t:'SNC — la afonía indica compromiso del nervio recurrente laríngeo',ok:false,fb:'La afonía en este contexto se debe al edema subglótico que afecta las cuerdas vocales, no a una lesión neurológica. El patrón clínico completo (tos perruna + estridor + afonia + fiebre) es crup.'},
+      ],
+      key:'Estridor INSPIRATORIO = obstrucción VAS (laringe/tráquea). Sibilancias ESPIRATORIAS = obstrucción VAI (bronquíolos). Esta distinción define el tratamiento desde el primer momento.'
+    },
+    {
+      label:'Caso 2 — Signos de inminencia',
+      q:'Valeria, 4 años, asma. FR 52 rpm, sibilancias que progresivamente disminuyen, FR ahora 30 rpm, SpO₂ 85% (Bogotá). ¿Qué significa la disminución de las sibilancias?',
+      opts:[
+        {t:'Mejoría clínica — las sibilancias disminuyen porque el broncoespasmo cedió',ok:false,fb:'INCORRECTO y potencialmente peligroso. En el contexto de deterioro clínico (bradipnea que reemplaza taquipnea, caída de SpO₂), la disminución de sibilancias indica silencio auscultatorio por agotamiento — el tórax ya no puede mover aire. NO es mejoría.'},
+        {t:'Silencio auscultatorio progresivo — el tórax está tan atrapado que ya no puede mover aire. Es agotamiento, no mejoría.',ok:true,fb:'Correcto. La bradipnea que reemplaza la taquipnea, combinada con disminución de sibilancias y caída de SpO₂, es la tríada de inminencia de paro ventilatoria por agotamiento muscular. El tórax atrapado no genera flujo de aire suficiente para producir sibilancias audibles.'},
+        {t:'El broncodilatador está funcionando — reducir la dosis de salbutamol',ok:false,fb:'Reducir el broncodilatador ante estos signos sería un error grave. Los signos descritos (bradipnea + silencio + SpO₂ ↓) indican deterioro severo, no respuesta al tratamiento.'},
+        {t:'Efecto paradójico del salbutamol — suspender el broncodilatador',ok:false,fb:'No existe un "efecto paradójico" que produzca este cuadro. El patrón descrito es agotamiento ventilatorio. El silencio auscultatorio en este contexto es una señal de emergencia.'},
+      ],
+      key:'Silencio auscultatorio + bradipnea que reemplaza taquipnea + SpO₂ ↓ = INMINENCIA DE PARO. Actuar inmediatamente con BVM y llamar al especialista.'
+    },
+  ]
+},
+
+// ─ MÓDULO 2: ORIGEN FV ───────────────────────────────────────────────────
+ori: {
+  titulo:'Origen de la Falla Ventilatoria',
+  subtitulo:'SNC · Vía aérea superior · Vía aérea inferior · Parénquima pulmonar',
+  teoria:`
+  <div class="content-card">
+    <h3>Los 4 niveles anatómicos de la falla ventilatoria</h3>
+    <table class="tbl">
+      <tr><th>Nivel</th><th>Mecanismo</th><th>Signos característicos</th><th>Ejemplos</th></tr>
+      <tr><td>SNC</td><td>Depresión del drive respiratorio</td><td>Bradipnea/apnea SIN esfuerzo · sin retracciones · conciencia alterada</td><td>Intoxicación · TCE · meningitis · encefalopatía</td></tr>
+      <tr><td>VAS</td><td>Obstrucción sobre/a nivel glótico</td><td>Estridor INSPIRATORIO · posición compensadora · babeo (epiglotitis)</td><td>Crup · epiglotitis · cuerpo extraño · angioedema</td></tr>
+      <tr><td>VAI</td><td>Obstrucción bronquiolar difusa</td><td>Sibilancias ESPIRATORIAS · hiperinsuflación · quejido · hipercapnia</td><td>Asma · bronquiolitis · anafilaxia</td></tr>
+      <tr><td>Parénquima</td><td>Falla en intercambio gaseoso</td><td>Hipoxemia que mejora con O₂ · crépitos · sin sibilancias prominentes</td><td>Neumonía · SDRA · edema pulmonar</td></tr>
+    </table>
+    <div class="alert alert-blue">
+      <strong>Clave diagnóstica:</strong> ¿Hay esfuerzo respiratorio?<br>
+      SÍ → VAS (estridor) o VAI (sibilancias) o Parénquima (crépitos)<br>
+      NO → SNC (depresión central del drive)
+    </div>
+  </div>`,
+  preguntas:[
+    {
+      label:'Caso 3 — Origen de la FV',
+      q:'Andrea, 16 meses. Encontrada inconsciente por sus padres. FR 8 rpm, sin esfuerzo respiratorio, sin retracciones, sin sibilancias ni estridor. AVPU: U. Pupilas mióticas bilaterales simétricas.',
+      opts:[
+        {t:'Obstrucción de vía aérea superior — el estridor puede no ser audible',ok:false,fb:'La obstrucción de VAS produce esfuerzo respiratorio intenso (retracciones, uso de accesorios, posición compensadora). Andrea no tiene esfuerzo respiratorio — el problema está en el CONTROL de la ventilación, no en la mecánica.'},
+        {t:'Depresión del SNC — bradipnea sin esfuerzo + miosis + inconciencia orientan a depresión central del drive respiratorio',ok:true,fb:'Correcto. La tríada bradipnea sin esfuerzo + miosis bilateral + inconciencia (AVPU: U) es la presentación clásica de intoxicación por opioides. El SNC no genera el estímulo para respirar. Tratamiento: naloxona 0.01 mg/kg IV + soporte ventilatorio.'},
+        {t:'Broncoespasmo severo — el silencio puede indicar tórax atrapado',ok:false,fb:'El broncoespasmo severo produce esfuerzo respiratorio intenso (retracciones, trabajo respiratorio visible). Andrea no tiene ningún signo de esfuerzo — el problema es la ausencia de drive respiratorio, no la obstrucción mecánica.'},
+        {t:'Neumonía con colapso pulmonar — la hipoxemia puede causar inconciencia',ok:false,fb:'La neumonía no produce miosis bilateral ni abolición completa del drive respiratorio de inicio tan súbito. El patrón miosis + apnea/bradipnea sin esfuerzo + inconciencia es de intoxicación por depresores del SNC.'},
+      ],
+      key:'Falla ventilatoria de origen SNC: bradipnea o apnea SIN esfuerzo respiratorio. Buscar siempre toxidromes (miosis → opioides; midriasis → estimulantes). Naloxona en sospecha de intoxicación por opioides.'
+    },
+    {
+      label:'Caso 4 — Diferenciación VAS vs VAI',
+      q:'Dos pacientes llegan simultáneamente. Paciente A: estridor inspiratorio + tos perruna + afonía. Paciente B: sibilancias espiratorias + quejido + hiperinsuflación. ¿Cuál es la diferencia en el manejo inicial?',
+      opts:[
+        {t:'Ambos reciben salbutamol nebulizado — es el broncodilatador de primera línea para cualquier obstrucción',ok:false,fb:'El salbutamol es un broncodilatador para VAI (asma, bronquiolitis). En la obstrucción de VAS (crup), el tratamiento es adrenalina nebulizada + dexametasona — el salbutamol no tiene efecto sobre el edema subglótico.'},
+        {t:'Paciente A (VAS): adrenalina nebulizada + dexametasona · Paciente B (VAI): salbutamol + corticoide IV',ok:true,fb:'Correcto. La diferencia en el nivel anatómico define el tratamiento: VAS (crup) → adrenalina neb. 3 mL 1:1000 + dexametasona 0.6 mg/kg · VAI (asma) → salbutamol neb. 0.15 mg/kg + corticoide IV. Usar salbutamol en crup o adrenalina en asma es un error de tratamiento.'},
+        {t:'Paciente A necesita intubación urgente — el estridor siempre indica intubación inmediata',ok:false,fb:'El estridor NO siempre indica intubación inmediata. En el crup leve-moderado, el manejo médico (adrenalina + dexametasona) suele ser suficiente. La intubación se reserva para deterioro severo (SpO₂ < 90%, fatiga extrema, alteración de conciencia) y debe hacerlo el especialista.'},
+        {t:'Ambos reciben O₂ y observación — esperar la evolución antes de tratar',ok:false,fb:'Ambos pacientes tienen signos de dificultad respiratoria significativa y requieren tratamiento activo inmediato, no solo observación.'},
+      ],
+      key:'VAS: adrenalina neb. + dexametasona · VAI: salbutamol + corticoide · Parénquima: O₂ + tratar causa · SNC: soporte ventilatorio + antídoto si aplica. El nivel anatómico define el tratamiento.'
+    },
+  ]
+},
+
+// ─ MÓDULO 3: DISPOSITIVOS O₂ ─────────────────────────────────────────────
+o2: {
+  titulo:'Dispositivos de Administración de O₂',
+  subtitulo:'Bajo flujo vs alto flujo — selección según la gravedad',
+  teoria:`
+  <div class="content-card">
+    <h3>Sistemas de bajo flujo</h3>
+    <table class="tbl">
+      <tr><th>Dispositivo</th><th>Flujo</th><th>FiO₂ aprox.</th><th>Indicación</th></tr>
+      <tr><td>Cánula nasal</td><td>0.5–4 L/min</td><td>24–44%</td><td>Hipoxemia leve · buena tolerancia</td></tr>
+      <tr><td>Mascarilla facial simple</td><td>5–10 L/min</td><td>35–50%</td><td>Hipoxemia moderada · mínimo 5 L/min</td></tr>
+      <tr><td>Mascarilla con reservorio</td><td>10–15 L/min</td><td>60–95%</td><td>Hipoxemia severa · emergencia</td></tr>
+      <tr><td>Mascarilla Venturi</td><td>Variable</td><td>24–50% (precisa)</td><td>FiO₂ exacta requerida</td></tr>
+    </table>
+  </div>
+  <div class="content-card">
+    <h3>Sistemas de alto flujo (OAF / CNAF)</h3>
+    <p>El gas entregado supera la demanda inspiratoria → FiO₂ precisa · genera PEEP fisiológico · reduce trabajo respiratorio.</p>
+    <table class="tbl">
+      <tr><th>Dispositivo</th><th>Flujo</th><th>FiO₂</th><th>Ventaja principal</th></tr>
+      <tr><td>OAF (High Flow)</td><td>2–60 L/min según peso</td><td>21–100%</td><td>PEEP leve · confort · bronquiolitis</td></tr>
+      <tr><td>CPAP</td><td>Variable</td><td>21–100%</td><td>Mantiene alvéolos abiertos</td></tr>
+      <tr><td>BiPAP / VNI</td><td>Variable</td><td>21–100%</td><td>Asma severa · hipercapnia · puente a intubación</td></tr>
+    </table>
+    <div class="alert alert-green">
+      <strong>OAF pediátrico — dosis:</strong> Lactantes 1–2 L/kg/min · Niños mayores hasta 40–60 L/min · Siempre con humidificación activa
+    </div>
+  </div>`,
+  preguntas:[
+    {
+      label:'Caso 5 — Selección de dispositivo',
+      q:'Felipe, 8 meses, bronquiolitis por VSR. FR 56 rpm, SpO₂ 88% con cánula nasal a 2 L/min, buena apariencia, sin signos de agotamiento. ¿Cuál es el siguiente paso en el manejo del O₂?',
+      opts:[
+        {t:'Mantener la cánula nasal a 2 L/min y observar',ok:false,fb:'Con SpO₂ 88% a 2 L/min en Bogotá (normal ≥ 88–90%), está en el límite inferior y con taquipnea marcada. Es momento de escalar el soporte — mantener igual no es una opción apropiada ante el trabajo respiratorio evidente.'},
+        {t:'Oxígeno de alto flujo (OAF) nasal — reduce el trabajo respiratorio, mejora la SpO₂ y es bien tolerado en lactantes con bronquiolitis',ok:true,fb:'Correcto. El OAF es la primera línea de escalada en bronquiolitis con falla a la cánula nasal. Dosis: 1–2 L/kg/min con humidificación activa. Mejora el aclaramiento mucociliar, genera PEEP fisiológico leve y es mucho mejor tolerado que la mascarilla en lactantes.'},
+        {t:'Intubación inmediata — la SpO₂ de 88% en Bogotá requiere vía aérea definitiva',ok:false,fb:'SpO₂ 88% en Bogotá está en el límite de lo normal (≥ 88–90%). Con buena apariencia y sin signos de agotamiento, no hay indicación de intubación. Escalar primero a OAF y evaluar respuesta.'},
+        {t:'Mascarilla con reservorio a 15 L/min',ok:false,fb:'La mascarilla con reservorio es difícil de tolerar en lactantes y no ofrece las ventajas de flujo preciso, humidificación y PEEP fisiológico del OAF. En bronquiolitis pediátrica el OAF es la opción preferida como escalada desde cánula nasal.'},
+      ],
+      key:'Escala de O₂ en pediatría: cánula nasal → OAF → CPAP/VNI → intubación. En bronquiolitis, el OAF es la escalada de primera elección antes de VNI o intubación.'
+    },
+  ]
+},
+
+// ─ MÓDULO 4: VPP ─────────────────────────────────────────────────────────
+vpp: {
+  titulo:'Dispositivos de Ventilación a Presión Positiva',
+  subtitulo:'BVM · CPAP · BiPAP · Máscara laríngea — cuándo y cómo',
+  teoria:`
+  <div class="content-card">
+    <h3>Clasificación de dispositivos de VPP</h3>
+    <table class="tbl">
+      <tr><th>Dispositivo</th><th>Cuándo</th><th>Técnica clave</th></tr>
+      <tr><td>BVM</td><td>Apnea · GCS ≤ 8 · SpO₂ &lt; 85% con O₂ máximo</td><td>Sello C-E · FR por edad · mínima presión necesaria</td></tr>
+      <tr><td>CPAP nasal</td><td>Apnea prematuro · bronquiolitis severa · edema pulmonar</td><td>PEEP inicial 5–6 cmH₂O · vigilar distensión gástrica</td></tr>
+      <tr><td>BiPAP / VNI</td><td>Asma severa · hipercapnia · falla neuromuscular</td><td>IPAP 8–16 · EPAP 4–8 cmH₂O · tolerar mascarilla</td></tr>
+      <tr><td>Máscara laríngea</td><td>Vía aérea difícil · puente a intubación · NRP ≥ 34 sem</td><td>No aísla vía aérea · riesgo aspiración</td></tr>
+    </table>
+  </div>
+  <div class="content-card">
+    <h3>BVM — Parámetros por edad</h3>
+    <table class="tbl">
+      <tr><th>Edad</th><th>FR</th><th>Posición</th><th>Bolsa</th></tr>
+      <tr><td>&lt; 1 año</td><td>40–60/min</td><td>Neutra</td><td>150–240 mL</td></tr>
+      <tr><td>1–8 años</td><td>12–20/min</td><td>Sniffing</td><td>500 mL</td></tr>
+      <tr><td>&gt; 8 años</td><td>10–12/min</td><td>Extensión moderada</td><td>500–1600 mL</td></tr>
+    </table>
+    <div class="alert alert-amber">
+      <strong>Errores frecuentes en BVM:</strong> Hiperextensión en lactantes · FR excesiva · presión excesiva → barotrauma · mascarilla solo sobre la nariz
+    </div>
+  </div>`,
+  preguntas:[
+    {
+      label:'Caso 6 — Técnica de BVM',
+      q:'Estás ventilando a un niño de 5 años con BVM. El tórax no eleva. ¿Cuál es tu secuencia de corrección?',
+      opts:[
+        {t:'Aumentar inmediatamente la presión de la bolsa hasta lograr elevación',ok:false,fb:'Aumentar la presión sin corregir la causa del problema puede producir barotrauma y distensión gástrica. La secuencia correcta es PRIMERO verificar el sello y la posición antes de aumentar la presión.'},
+        {t:'Verificar sello C-E → reposicionar la vía aérea → succionar si hay secreciones → abrir la boca → aumentar presión si persiste sin elevación',ok:true,fb:'Correcto. Esta es exactamente la secuencia MRSOPA adaptada a la BVM: Mascarilla (sello) → Reposicionar → Succionar → Open mouth → Presión. Aplicarla en orden antes de escalar a intubación.'},
+        {t:'Intubar inmediatamente — si la BVM falla hay que asegurar la vía aérea',ok:false,fb:'La falta de elevación con BVM frecuentemente se debe a errores técnicos corregibles (sello, posición, secreciones). Antes de decidir intubar, aplicar los pasos correctivos. La intubación en pediatría requiere preparación y especialista disponible.'},
+        {t:'Cambiar a mascarilla con reservorio — la BVM puede no ser suficiente en este caso',ok:false,fb:'La mascarilla con reservorio entrega O₂ pasivo — no ventila al paciente. Si el paciente necesita VPP, la BVM bien utilizada es la herramienta correcta.'},
+      ],
+      key:'Si la BVM no ventila efectivamente: MRSOPA — Mascarilla (sello C-E) · Reposicionar vía aérea · Succionar · Open mouth · Presión · Alternativa de vía aérea. Aplicar en orden antes de escalar.'
+    },
+  ]
+},
+
+// ─ MÓDULO 5: CÁLCULOS TOT ────────────────────────────────────────────────
+tot: {
+  titulo:'Cálculos del Tubo Orotraqueal',
+  subtitulo:'Tamaño · Distancia de inserción · Verificación de posición',
+  teoria:`
+  <div class="content-card">
+    <h3>Fórmulas del TOT</h3>
+    <table class="tbl">
+      <tr><th>Fórmula</th><th>Aplicación</th></tr>
+      <tr><td>TOT sin balón: (Edad/4) + 4</td><td>Niños 1–8 años</td></tr>
+      <tr><td>TOT con balón: (Edad/4) + 3.5</td><td>Niños 1–8 años — PALS 2025 (preferido)</td></tr>
+      <tr><td>Distancia oral: (Edad/2) + 12 cm</td><td>Desde comisura labial</td></tr>
+      <tr><td>Distancia nasal: (Edad/2) + 15 cm</td><td>Intubación nasotraqueal</td></tr>
+      <tr><td>RN término: 3.5 mm · dist. Tochen: 7 + peso (kg)</td><td>Neonatos ≥ 37 sem</td></tr>
+      <tr><td>Referencia rápida: número del tubo × 3</td><td>Estimación de distancia en emergencia</td></tr>
+    </table>
+    <div class="alert alert-blue"><strong>Siempre tener:</strong> tubo calculado + uno mayor + uno menor</div>
+  </div>`,
+  calculadora:`
+  <div class="content-card">
+    <h3>Calculadora interactiva</h3>
+    <div class="calc-wrap">
+      <div class="calc-row">
+        <label>Edad (años):</label>
+        <input type="number" id="edad-input" class="calc-input" min="0" max="18" step="0.5" placeholder="Ej: 4">
+        <label>Peso (kg):</label>
+        <input type="number" id="peso-input" class="calc-input" min="0.5" max="80" step="0.1" placeholder="Ej: 16">
+        <button class="btn-calc" onclick="calcularTOT()">Calcular</button>
+      </div>
+      <div id="calc-result" class="calc-result" style="display:none"></div>
+    </div>
+  </div>`,
+  preguntas:[
+    {
+      label:'Cálculo TOT — caso práctico',
+      q:'Camila, 6 años, 22 kg. Requiere intubación de urgencia. ¿Cuál es el TOT correcto CON balón y la distancia de inserción oral?',
+      opts:[
+        {t:'TOT 4.5 mm con balón · distancia 13 cm',ok:false,fb:'Revisemos: TOT con balón = (6/4) + 3.5 = 1.5 + 3.5 = 5.0 mm. Distancia oral = (6/2) + 12 = 3 + 12 = 15 cm. La opción tiene el tubo y la distancia incorrectos.'},
+        {t:'TOT 5.0 mm con balón · distancia 15 cm',ok:true,fb:'Correcto. TOT con balón = (edad/4) + 3.5 = (6/4) + 3.5 = 1.5 + 3.5 = 5.0 mm. Distancia oral = (edad/2) + 12 = (6/2) + 12 = 3 + 12 = 15 cm. Tener disponible también 4.5 y 5.5 mm.'},
+        {t:'TOT 5.5 mm con balón · distancia 16 cm',ok:false,fb:'5.5 mm sería el tubo de reserva (un número mayor). El calculado con la fórmula es 5.0 mm. La distancia de 16 cm tampoco es correcta — (6/2)+12 = 15 cm.'},
+        {t:'TOT 6.0 mm con balón · distancia 18 cm',ok:false,fb:'TOT 6.0 mm correspondería a una edad de aproximadamente 10 años [(10/4)+3.5=6.0]. Para 6 años el cálculo da 5.0 mm con balón.'},
+      ],
+      key:'TOT con balón (PALS 2025): (edad/4) + 3.5 · Distancia oral: (edad/2) + 12 · Verificación rápida: tubo × 3 ≈ distancia. SIEMPRE tener ±1 número disponible.'
+    },
+  ]
+},
+
+// ─ MÓDULO 6: ISR ─────────────────────────────────────────────────────────
+isr: {
+  titulo:'Secuencia de Intubación Rápida (ISR)',
+  subtitulo:'Conocimiento teórico — la ISR la ejecuta el especialista',
+  teoria:`
+  <div class="alert alert-amber" style="margin-bottom:12px">
+    <strong>Importante:</strong> La ISR es competencia del médico especialista. El médico general debe reconocer la indicación, mantener la ventilación con BVM y preparar el terreno. Esta sección es conocimiento teórico que te permite colaborar efectivamente con el equipo.
+  </div>
+  <div class="content-card">
+    <h3>Los 7 pasos de la ISR (las 7 P)</h3>
+    <table class="tbl">
+      <tr><th>#</th><th>Paso</th><th>Acción clave</th></tr>
+      <tr><td>1</td><td>Preparación</td><td>Equipo · fármacos rotulados · monitoreo · TOT calculado ±1</td></tr>
+      <tr><td>2</td><td>Preoxigenación</td><td>O₂ 100% × 3–5 min · SpO₂ objetivo > 94% antes de intubar</td></tr>
+      <tr><td>3</td><td>Premedicación</td><td>Atropina · fentanilo · lidocaína según contexto — 3 min antes</td></tr>
+      <tr><td>4</td><td>Parálisis e inducción</td><td>Inductor + paralizante · pérdida del conocimiento en 30–60 seg</td></tr>
+      <tr><td>5</td><td>Posición</td><td>Sniffing (niños) · neutra (lactantes) · simultáneo con paso 4</td></tr>
+      <tr><td>6</td><td>Laringoscopia e intubación</td><td>Visualizar cuerdas · pasar tubo · inflar balón · &lt; 30 seg de apnea</td></tr>
+      <tr><td>7</td><td>Post-intubación</td><td>Verificar · fijar · iniciar VM · sedar · capnografía</td></tr>
+    </table>
+  </div>
+  <div class="content-card">
+    <h3>Premedicación</h3>
+    <table class="tbl">
+      <tr><th>Fármaco</th><th>Dosis</th><th>Indicación</th><th>Efecto</th></tr>
+      <tr><td>Atropina</td><td>0.02 mg/kg (mín 0.1 mg)</td><td>Lactantes · succinilcolina · bradicardia</td><td>Previene bradicardia refleja</td></tr>
+      <tr><td>Fentanilo</td><td>1–3 mcg/kg IV lento</td><td>HTE · respuesta adrenérgica</td><td>Bloquea respuesta simpática</td></tr>
+      <tr><td>Lidocaína</td><td>1–2 mg/kg IV</td><td>HTE · asma (controvertido)</td><td>Atenúa respuesta hipertensiva · reduce PIC</td></tr>
+    </table>
+  </div>
+  <div class="content-card">
+    <h3>Inductores</h3>
+    <table class="tbl">
+      <tr><th>Inductor</th><th>Dosis</th><th>Primera elección en</th><th>Precaución</th></tr>
+      <tr><td>Ketamina</td><td>1–2 mg/kg IV</td><td>Asma · shock · inestabilidad</td><td>HTE severa relativa · hipersecreciones</td></tr>
+      <tr><td>Propofol</td><td>1.5–3 mg/kg IV</td><td>Paciente estable</td><td>Hipotensión · no en shock</td></tr>
+      <tr><td>Etomidato</td><td>0.3 mg/kg IV</td><td>Inestabilidad hemodinámica</td><td>Supresión adrenal (dosis única)</td></tr>
+      <tr><td>Midazolam</td><td>0.1–0.3 mg/kg IV</td><td>Alternativa de urgencia</td><td>Efecto lento · no es inductor de primera línea</td></tr>
+    </table>
+  </div>
+  <div class="content-card">
+    <h3>Paralizantes</h3>
+    <table class="tbl">
+      <tr><th>Fármaco</th><th>Dosis</th><th>Inicio</th><th>Duración</th><th>Nota</th></tr>
+      <tr><td>Rocuronio</td><td>1–1.2 mg/kg</td><td>45–60 seg</td><td>30–60 min</td><td>Primera línea · reversible con sugammadex</td></tr>
+      <tr><td>Succinilcolina</td><td>1–2 mg/kg (< 10 kg: 2 mg/kg)</td><td>30–45 seg</td><td>10–15 min</td><td>Contraindicada en hiperpotasemia · miopatías</td></tr>
+    </table>
+    <div class="alert alert-red"><strong>Sugammadex:</strong> antídoto del rocuronio — 16 mg/kg IV revierte en < 3 min</div>
+  </div>`,
+  preguntas:[
+    {
+      label:'Caso 7 — Elección del inductor',
+      q:'Tomás, 5 años, 18 kg. Crisis asmática severa, GCS 12, SpO₂ 82% con BVM. El especialista va a realizar la ISR. ¿Cuál es el inductor más apropiado y por qué?',
+      opts:[
+        {t:'Propofol — es el más rápido y da las mejores condiciones de intubación',ok:false,fb:'El propofol es un inductor útil en pacientes estables, pero causa hipotensión y no tiene efecto broncodilatador. En un asmático con inestabilidad hemodinámica, el propofol puede agravar la situación. No es la primera elección aquí.'},
+        {t:'Ketamina — es broncodilatador, mantiene el tono simpático y es de elección en asma e inestabilidad hemodinámica',ok:true,fb:'Correcto. La ketamina es el inductor de elección en asma porque: (1) bloquea receptores NMDA → broncodilatación directa, (2) estimula la liberación de catecolaminas → mantiene la PA, (3) preserva mejor el drive respiratorio y los reflejos. En asma severa es la primera línea.'},
+        {t:'Midazolam — es el más seguro en pediatría y tiene buenas condiciones de intubación',ok:false,fb:'El midazolam tiene efecto lento, causa hipotensión y depresión respiratoria sin las ventajas broncodilatadoras de la ketamina. No es inductor de primera línea para ISR, especialmente en asma.'},
+        {t:'Etomidato — es el mejor para situaciones de inestabilidad hemodinámica',ok:false,fb:'El etomidato es útil en inestabilidad hemodinámica (TCE, trauma), pero no tiene efecto broncodilatador. En asma severa, la ketamina es preferida porque además de inducir anestesia, actúa como broncodilatador.'},
+      ],
+      key:'Ketamina en asma: broncodilatador + estabilizador hemodinámico + inductor = elección IDEAL. Siempre combinar con BZD para sedación mantenida post-intubación y premedicar con atropina para controlar hipersecreciones.'
+    },
+    {
+      label:'Caso 8 — Contraindicación de succinilcolina',
+      q:'Ricardo, 9 años. Intoxicación por organofosforados, convulsiones activas, hiperkalemia 6.2 mEq/L. El especialista planea ISR. ¿Cuál paralizante está contraindicado y por qué?',
+      opts:[
+        {t:'Rocuronio — está contraindicado porque no se puede revertir rápido si hay vía aérea difícil',ok:false,fb:'El rocuronio SÍ se puede revertir rápido con sugammadex (16 mg/kg en < 3 min). No está contraindicado en este caso — al contrario, es la primera línea aquí precisamente porque se puede revertir.'},
+        {t:'Succinilcolina — contraindicada por hiperkalemia. La succinilcolina libera K⁺ de las células musculares, puede elevar el K a niveles letales.',ok:true,fb:'Correcto. La succinilcolina actúa despolarizando la placa neuromuscular, lo que causa salida masiva de K⁺ de las células musculares. En un paciente ya hiperkalémico (K 6.2), puede producir hiperpotasemia grave con paro cardíaco. Además, en intoxicación por organofosforados (inhibidores de la colinesterasa), la succinilcolina tiene efecto prolongado impredecible. Usar rocuronio 1.2 mg/kg.'},
+        {t:'Vecuronio — contraindicado por las convulsiones activas',ok:false,fb:'Las convulsiones activas no son contraindicación para el vecuronio. El vecuronio es un paralizante seguro pero de inicio más lento que el rocuronio. El problema en este caso es la hiperkalemia, y el paralizante contraindicado es la succinilcolina.'},
+        {t:'Cisatracurio — contraindicado por la intoxicación por organofosforados',ok:false,fb:'El cisatracurio no tiene contraindicación especial en organofosforados. De hecho, tiene la ventaja de metabolizarse por degradación de Hofmann (independiente del hígado y riñón). El problema es la hiperkalemia y el paralizante contraindicado es la succinilcolina.'},
+      ],
+      key:'Succinilcolina CONTRAINDICADA en: hiperpotasemia · quemados extensos · aplastamiento · denervación · miopatías · hipertermia maligna. En estos casos: ROCURONIO 1.2 mg/kg + sugammadex disponible como antídoto.'
+    },
+  ]
+},
+
+// ─ MÓDULO 7: VM BÁSICA ───────────────────────────────────────────────────
+vm: {
+  titulo:'Ventilación Mecánica Convencional Básica',
+  subtitulo:'Parámetros iniciales · Estrategias por patología · Alarmas DOPE',
+  teoria:`
+  <div class="content-card">
+    <h3>Parámetros iniciales — ventilación protectora</h3>
+    <table class="tbl">
+      <tr><th>Parámetro</th><th>Valor inicial</th><th>Objetivo</th></tr>
+      <tr><td>Volumen tidal (VT)</td><td>6–8 mL/kg peso ideal</td><td>Elevación torácica visible · evitar sobredistensión</td></tr>
+      <tr><td>FR lactantes</td><td>30–40/min</td><td>PaCO₂ 35–45 mmHg</td></tr>
+      <tr><td>FR niños</td><td>20–30/min</td><td>PaCO₂ 35–45 mmHg</td></tr>
+      <tr><td>FR > 8 años</td><td>15–20/min</td><td>PaCO₂ 35–45 mmHg</td></tr>
+      <tr><td>PEEP</td><td>4–6 cmH₂O</td><td>Mantener alvéolos abiertos</td></tr>
+      <tr><td>FiO₂</td><td>100% inicial → titular</td><td>SpO₂ 94–98%</td></tr>
+      <tr><td>Relación I:E</td><td>1:2</td><td>Evitar air trapping</td></tr>
+      <tr><td>Presión plateau</td><td>< 30 cmH₂O</td><td>Prevenir barotrauma</td></tr>
+    </table>
+  </div>
+  <div class="content-card">
+    <h3>Estrategias especiales por patología</h3>
+    <table class="tbl">
+      <tr><th>Patología</th><th>Estrategia</th><th>Parámetro clave</th></tr>
+      <tr><td>Asma/broncoespasmo</td><td>Hipercapnia permisiva · I:E 1:3–1:4</td><td>FR baja · PEEP 3–5 · aceptar PaCO₂ hasta 80 si pH > 7.20</td></tr>
+      <tr><td>SDRA</td><td>Ultra-protectora · PEEP alto</td><td>VT 4–6 mL/kg · PEEP 8–15 · decúbito prono en severo</td></tr>
+      <tr><td>HTE / TCE</td><td>Normoventilar</td><td>PaCO₂ 35–40 · hiperventilación solo si herniación inminente</td></tr>
+      <tr><td>Neonatal</td><td>Presiones bajas · VT ajustado</td><td>VT 4–6 mL/kg · PIP 16–20 · PEEP 4–5 · FR 40–60/min</td></tr>
+    </table>
+  </div>
+  <div class="content-card">
+    <h3>Alarmas en VM — mnemotecnia DOPE</h3>
+    <table class="tbl">
+      <tr><th>Letra</th><th>Causa</th><th>Señal</th><th>Acción</th></tr>
+      <tr><td>D — Desplazamiento</td><td>TET fuera de posición</td><td>MV asimétrico · SpO₂ ↓</td><td>Laringoscopia · reposicionar</td></tr>
+      <tr><td>O — Obstrucción</td><td>Tapón de moco · doblez TET</td><td>↑ Presión pico · sin flujo</td><td>Aspirar · enderezar</td></tr>
+      <tr><td>P — Neumotórax</td><td>Barotrauma</td><td>↑ Pico + hipotensión + asimetría</td><td>Aguja SIN esperar Rx</td></tr>
+      <tr><td>E — Equipo</td><td>Falla ventilador · fuga</td><td>Alarmas · paciente no ventila</td><td>BVM manual → revisar</td></tr>
+    </table>
+  </div>`,
+  preguntas:[
+    {
+      label:'Caso 9 — Parámetros en asma',
+      q:'Luisa, 8 años, 28 kg, intubada por asma severa. El especialista pide ayuda para configurar el ventilador. ¿Cuáles son los parámetros correctos?',
+      opts:[
+        {t:'VT 10 mL/kg · FR 30/min · PEEP 10 · I:E 1:1 — para eliminar el CO₂ retenido',ok:false,fb:'Esta estrategia es peligrosa en asma. VT alto + FR alta + I:E 1:1 = hiperinsuflación dinámica → barotrauma → neumotórax → colapso cardiovascular. En asma se necesita tiempo espiratorio prolongado, no comprimirlo.'},
+        {t:'VT 6–8 mL/kg · FR 12–14/min · PEEP 3–5 · I:E 1:3–1:4 · hipercapnia permisiva si pH > 7.20',ok:true,fb:'Correcto. La estrategia en asma es: VT conservador (6–8 mL/kg), FR baja para dar tiempo espiratorio suficiente (I:E 1:3–1:4), PEEP bajo (no agrava el atrapamiento), y aceptar PaCO₂ elevada (hipercapnia permisiva) mientras el broncoespasmo mejora con el tratamiento médico.'},
+        {t:'VT 6 mL/kg · FR 35/min · PEEP 8 · I:E 1:2 — ventilación protectora estándar',ok:false,fb:'FR 35/min en asma es excesiva — no permite el vaciamiento alveolar completo y produce hiperinsuflación dinámica. Además, PEEP 8 en asma es alto y puede agravar el atrapamiento. La FR debe ser baja en asma.'},
+        {t:'VT 8 mL/kg · FR 20/min · PEEP 5 · I:E 1:2 · FiO₂ 100% — parámetros conservadores',ok:false,fb:'FR 20/min puede ser aceptable, pero la I:E de 1:2 puede ser insuficiente en asma severa donde se necesita I:E de 1:3 a 1:4. Además, FiO₂ 100% mantenida no está indicada si SpO₂ está en rango — titular al mínimo necesario.'},
+      ],
+      key:'VM en asma: FR baja · I:E 1:3–1:4 · PEEP bajo (3–5) · VT 6–8 mL/kg · Hipercapnia permisiva (pH > 7.20 es aceptable). El objetivo NO es normalizar el CO₂ — es evitar el barotrauma mientras mejora el broncoespasmo.'
+    },
+    {
+      label:'Caso 10 — DOPE en acción',
+      q:'Paciente intubado en VM. Súbitamente: presión pico sube de 22 a 48 cmH₂O, SpO₂ cae a 78%, PA 55/30 mmHg, MV ausente en hemitórax izquierdo. ¿Cuál es el diagnóstico y la acción inmediata?',
+      opts:[
+        {t:'Tapón de moco — aspirar el tubo inmediatamente',ok:false,fb:'El tapón de moco produce aumento de presión y puede producir asimetría, pero raramente causa hipotensión tan brusca ni asimetría tan marcada de forma tan abrupta. La tríada presión pico ↑ + hipotensión + asimetría auscultación es neumotórax a tensión hasta demostrar lo contrario.'},
+        {t:'Neumotórax a tensión — descompresión con aguja en 2° EIC línea medioclavicular izquierda SIN esperar Rx',ok:true,fb:'Correcto. La tríada clásica de neumotórax a tensión: ↑ presión pico súbita + ↓ SpO₂ + hipotensión + ausencia de MV ipsilateral. En VM el riesgo de barotrauma es alto. La descompresión con aguja es una emergencia que no espera confirmación radiológica — 2° espacio intercostal, línea medioclavicular, por encima del 3° arco costal (para evitar el paquete vasculonervioso).'},
+        {t:'Extubación accidental — revisar la posición del tubo con laringoscopia',ok:false,fb:'La extubación accidental produciría pérdida de ventilación bilateral, no asimetría unilateral. Además la hipotensión súbita con asimetría auscultación en VM apunta a neumotórax a tensión.'},
+        {t:'Falla del ventilador — desconectar y ventilar con BVM mientras se cambia el equipo',ok:false,fb:'La falla del ventilador no produce asimetría en la auscultación ni hipotensión por sí sola. El patrón descrito (presión ↑ + hipotensión + asimetría) es neumotórax a tensión. Desconectar al BVM es parte del manejo (quita presión positiva), pero la acción principal es la descompresión con aguja.'},
+      ],
+      key:'↑ Presión pico + ↓ SpO₂ + hipotensión + MV asimétrico = NEUMOTÓRAX A TENSIÓN. Descompresión con aguja INMEDIATA sin esperar Rx: 2° EIC, línea medioclavicular, borde superior del 3° arco costal. Nunca retrasar por una radiografía.'
+    },
+  ]
+},
+
+}; // fin CONTENIDO
+
+// ── TIMER ──────────────────────────────────────────────────────────────────
+function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function startTimer(){ timerInt=setInterval(()=>{ timerSec++; document.getElementById('timer').textContent=fmt(timerSec); },1000); }
+
+// ── NAV ────────────────────────────────────────────────────────────────────
+function renderNav(){
+  document.getElementById('mod-nav').innerHTML = MODS.map((m,i)=>`
+    <button class="mod-btn ${i===modActual?'active':scores[m.id]>0?'done':''}"
+      onclick="irMod(${i})">${m.emoji} ${m.label}</button>`).join('');
+}
+
+function irMod(idx){ modActual=idx; qStep=0; answered=false; renderNav(); renderMod(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+// ── RENDER MÓDULO ──────────────────────────────────────────────────────────
+function renderMod(){
+  const m = MODS[modActual];
+  const c = CONTENIDO[m.id];
+  if(!c){ document.getElementById('main').innerHTML='<div style="padding:40px;text-align:center;color:#6b7280">Módulo en construcción</div>'; return; }
+
+  let html = `
+    <div class="mod-header">
+      <h2>${m.emoji} ${c.titulo}</h2>
+      <p>${c.subtitulo}</p>
+    </div>
+    ${c.teoria||''}
+    ${c.calculadora||''}
+    <div id="q-area"></div>`;
+  document.getElementById('main').innerHTML = html;
+  renderPregunta();
+}
+
+function renderPregunta(){
+  const m = MODS[modActual];
+  const c = CONTENIDO[m.id];
+  if(!c||!c.preguntas) return;
+  const q = c.preguntas[qStep];
+  if(!q){ renderModDone(); return; }
+  const letters=['A','B','C','D'];
+  document.getElementById('q-area').innerHTML = `
+    <div class="content-card" style="border-color:#1d4ed8">
+      <div class="q-label">${q.label}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="opts" id="opts">
+        ${q.opts.map((o,i)=>`
+          <div class="opt" id="opt${i}" onclick="handleOpt(${i})">
+            <span class="opt-letter">${letters[i]}</span>
+            <span>${o.t}</span>
+          </div>`).join('')}
+      </div>
+      <div id="fb-area"></div>
+      <div id="next-area"></div>
+    </div>`;
+}
+
+function handleOpt(idx){
+  if(answered) return;
+  answered = true;
+  const m = MODS[modActual];
+  const c = CONTENIDO[m.id];
+  const q = c.preguntas[qStep];
+  const chosen = q.opts[idx];
+  scores.total++;
+  if(chosen.ok){ scores.correct++; modScores[modActual]++; }
+  document.querySelectorAll('.opt').forEach((el,i)=>{
+    el.classList.add('disabled');
+    if(q.opts[i].ok) el.classList.add('correct');
+  });
+  document.getElementById('opt'+idx).classList.add(chosen.ok?'correct':'incorrect');
+  document.getElementById('fb-area').innerHTML=`
+    <div class="fb ${chosen.ok?'fb-ok':'fb-err'}"><strong>${chosen.ok?'Correcto':'No es la mejor opción'}:</strong> ${chosen.fb}</div>
+    <div class="key-box"><strong>Concepto clave:</strong> ${q.key}</div>`;
+  const isLastQ = qStep >= c.preguntas.length-1;
+  const isLastMod = modActual >= MODS.length-1;
+  const na = document.getElementById('next-area');
+  if(!isLastQ){
+    const b=document.createElement('button'); b.className='btn-next';
+    b.textContent='Siguiente pregunta →';
+    b.onclick=()=>{ qStep++; answered=false; renderPregunta(); window.scrollTo({top:400,behavior:'smooth'}); };
+    na.appendChild(b);
+  } else if(!isLastMod){
+    const b=document.createElement('button'); b.className='btn-next';
+    b.textContent=`Continuar al módulo: ${MODS[modActual+1].emoji} ${MODS[modActual+1].label} →`;
+    b.onclick=()=>{ irMod(modActual+1); };
+    na.appendChild(b);
+  } else {
+    const b=document.createElement('button'); b.className='btn-next';
+    b.textContent='Ver resultado final →'; b.onclick=showFinal; na.appendChild(b);
+  }
+}
+
+function renderModDone(){
+  document.getElementById('q-area').innerHTML=`
+    <div class="content-card" style="text-align:center">
+      <p style="color:#059669;font-weight:600;font-size:14px">✓ Módulo completado</p>
+      <button class="btn-next" onclick="irMod(${modActual+1})" style="max-width:300px;margin:10px auto">
+        ${modActual<MODS.length-1?`Continuar: ${MODS[modActual+1].emoji} ${MODS[modActual+1].label} →`:'Ver resultado final'}
+      </button>
+    </div>`;
+}
+
+function calcularTOT(){
+  const edad = parseFloat(document.getElementById('edad-input').value);
+  const peso = parseFloat(document.getElementById('peso-input').value);
+  if(isNaN(edad) && isNaN(peso)){ alert('Ingresa edad o peso'); return; }
+  let html = '';
+  if(!isNaN(edad) && edad>=1 && edad<=14){
+    const totSin = (edad/4+4).toFixed(1);
+    const totCon = (edad/4+3.5).toFixed(1);
+    const distOral = (edad/2+12).toFixed(0);
+    const distNasal = (edad/2+15).toFixed(0);
+    html += `<div><span class="calc-result-val">TOT sin balón: ${totSin} mm</span></div>
+    <div><span class="calc-result-val">TOT con balón (PALS 2025): ${totCon} mm</span></div>
+    <div style="margin-top:6px"><span class="calc-result-val">Distancia oral: ${distOral} cm</span></div>
+    <div><span class="calc-result-val">Distancia nasal: ${distNasal} cm</span></div>
+    <div style="margin-top:6px;color:#6b7280;font-size:11px">Tener disponible: ${(parseFloat(totCon)-0.5).toFixed(1)} · ${totCon} · ${(parseFloat(totCon)+0.5).toFixed(1)} mm</div>`;
+  }
+  if(!isNaN(peso) && peso<5){
+    const dist = (7+peso).toFixed(1);
+    const tot = peso<1?2.5:peso<2?3.0:3.5;
+    html += `<div style="margin-top:8px"><span class="calc-result-val">TOT neonatal: ${tot} mm</span></div>
+    <div><span class="calc-result-val">Distancia Tochen: ${dist} cm</span></div>`;
+  }
+  if(!html) html='<div style="color:#6b7280">Ingresa edad entre 1–14 años o peso neonatal (< 5 kg)</div>';
+  document.getElementById('calc-result').innerHTML=html;
+  document.getElementById('calc-result').style.display='block';
+}
+
+function showFinal(){
+  if(timerInt) clearInterval(timerInt);
+  const pct = Math.round(scores.correct/scores.total*100);
+  const col = pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
+  const msg = pct>=80?'Excelente dominio del contenido asíncrono.':pct>=60?'Buen trabajo. Repasa los módulos con menor puntaje.':'Revisa la guía de estudio y vuelve a intentar los módulos difíciles.';
+  document.getElementById('mod-nav').style.display='none';
+  document.getElementById('main').innerHTML=`
+    <div class="final-card">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Resultado — Actividad Asíncrona Vía Aérea Pediátrica</div>
+      <div class="final-score" style="color:${col}">${scores.correct}/${scores.total}</div>
+      <div style="font-size:14px;color:${col};font-weight:500;margin-bottom:16px">${pct}% — ${msg} · Tiempo: ${fmt(timerSec)}</div>
+      <div class="final-grid">
+        ${MODS.map((m,i)=>`<div class="fg-item"><div class="fg-val">${modScores[i]}/${CONTENIDO[m.id]?.preguntas?.length||0}</div><div class="fg-lbl">${m.emoji} ${m.label}</div></div>`).join('')}
+      </div>
+      <div style="background:#f9fafb;border-radius:10px;padding:14px;text-align:left;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase">Conceptos evaluados</div>
+        ${['Semiología: estridor (VAS) vs sibilancias (VAI) vs silencio auscultatorio','Falla ventilatoria: identificar el nivel anatómico por el patrón clínico','Dispositivos de O₂: escala desde cánula nasal hasta OAF/VNI','BVM: técnica C-E · pasos MRSOPA cuando no eleva el tórax','TOT: fórmulas con y sin balón · distancia de inserción · verificación','ISR: 7P · ketamina en asma · contraindicaciones de succinilcolina · sugammadex','VM: hipercapnia permisiva en asma · DOPE · neumotórax a tensión'].map(s=>`<div class="summary-item">✓ ${s}</div>`).join('')}
+      </div>
+      <div style="background:#dbeafe;border-radius:8px;padding:12px;font-size:12px;color:#1e40af;margin-bottom:12px">
+        <strong>Próximo paso:</strong> Taller presencial de falla ventilatoria. Llega con estos conceptos frescos — los pondremos en práctica en el simulador de alta fidelidad.
+      </div>
+      <button class="btn-restart" onclick="location.reload()">Reiniciar actividad</button>
+    </div>`;
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+startTimer();
+renderNav();
+renderMod();
+</script>
+</body>
+</html>
