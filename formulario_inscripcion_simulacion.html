@@ -216,19 +216,50 @@ async function inscribir(){
   let secuencial = 1;
   let registros = [];
 
-  // Si JSONBin está configurado, obtener el número secuencial real
+  // Si JSONBin está configurado, leer + guardar en una sola operación
   if(BIN_ID !== 'NO_CONFIGURADO'){
     try {
+      // 1. Leer bin completo
       const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
         headers:{'X-Master-Key': API_KEY}
       });
       const data = await res.json();
-      registros = data.record?.inscripciones || [];
-      // Contar participantes del mismo grupo para asignar secuencial
-      const delGrupo = registros.filter(r => r.grupo === grupo);
+      const binActual = data.record || {};
+      registros = binActual.inscripciones || [];
+
+      // 2. Asignar secuencial DENTRO del mismo bloque — antes del PUT
+      // Usar timestamp como desempate para evitar colisiones simultáneas
+      const delGrupo = registros.filter(r => r.grupo_num === grupo || r.grupo === `Grupo ${grupo}`);
       secuencial = delGrupo.length + 1;
+
+      const codigo = generarCodigo(grupo, secuencial);
+      const timestamp = new Date().toISOString();
+      const registro = {
+        timestamp, codigo, nombre, semestre,
+        grupo: `Grupo ${grupo}`, grupo_num: grupo,
+        experiencia_previa: experiencia,
+        correo: correo || 'No proporcionado',
+        secuencial,
+        uid: timestamp + '_' + Math.random().toString(36).substr(2,6),
+      };
+
+      // 3. Agregar y guardar en un solo PUT
+      registros.push(registro);
+      const payloadFinal = Object.assign({}, binActual, {inscripciones: registros});
+      await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+        body: JSON.stringify(payloadFinal)
+      });
+
+      mostrarCodigo(codigo, nombre, grupo);
+      document.getElementById('status-form').innerHTML =
+        '<div class="status status-ok">✓ Inscripción registrada correctamente.</div>';
+      return;
+
     } catch(e){
-      // Si falla, usar localStorage como fallback
+      console.error('Error JSONBin:', e);
+      // Fallback a localStorage
       const local = JSON.parse(localStorage.getItem('inscripciones')||'[]');
       const delGrupo = local.filter(r=>r.grupo===grupo);
       secuencial = delGrupo.length + 1;
@@ -240,49 +271,17 @@ async function inscribir(){
     secuencial = delGrupo.length + 1;
   }
 
+  // Fallback localStorage — solo llega aquí si JSONBin falló o no está configurado
   const codigo = generarCodigo(grupo, secuencial);
   const timestamp = new Date().toISOString();
-
   const registro = {
-    timestamp,
-    codigo,
-    nombre,
-    semestre,
-    grupo: `Grupo ${grupo}`,
-    grupo_num: grupo,
+    timestamp, codigo, nombre, semestre,
+    grupo: `Grupo ${grupo}`, grupo_num: grupo,
     experiencia_previa: experiencia,
     correo: correo || 'No proporcionado',
     secuencial,
   };
-
-  // Guardar en JSONBin o localStorage
-  if(BIN_ID !== 'NO_CONFIGURADO'){
-    try{
-      // Leer bin completo para preservar todas las claves
-      const binRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
-        headers:{'X-Master-Key': API_KEY}
-      });
-      const binData = await binRes.json();
-      const binActual = binData.record || {};
-      const inscripcionesActuales = binActual.inscripciones || [];
-      inscripcionesActuales.push(registro);
-      const payloadFinal = Object.assign({}, binActual, {inscripciones: inscripcionesActuales});
-      const putRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
-        body: JSON.stringify(payloadFinal)
-      });
-      const putData = await putRes.json();
-      console.log('PUT result:', putData);
-    } catch(e){
-      console.error('Error JSONBin:', e);
-      guardarLocal(registro);
-    }
-  } else {
-    guardarLocal(registro);
-  }
-
-  // Mostrar código
+  guardarLocal(registro);
   mostrarCodigo(codigo, nombre, grupo);
 }
 
