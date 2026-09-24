@@ -185,13 +185,17 @@ const MODS = [
     </div>
     <div class="card">
       <h3>¿Qué solución se usa para el mantenimiento?</h3>
+      <p style="font-size:12px;color:#374151;margin-bottom:8px">La selección de la solución depende de la edad y los requerimientos metabólicos del paciente. Esta tabla muestra las mezclas estándar utilizadas en la práctica clínica:</p>
       <table class="tbl">
-        <tr><th>Grupo etario</th><th>Solución recomendada</th><th>Justificación</th></tr>
-        <tr><td>Recién nacido (0–28 días)</td><td>Dextrosa 10% + NaCl 0.9% en proporción 4:1</td><td>Alta demanda de glucosa · riñón inmaduro</td></tr>
-        <tr><td>Lactante (1–12 meses)</td><td>Dextrosa 5% + SSN 0.9% (1:4) o DAD 5%</td><td>Requerimiento glucosa + mantenimiento de Na</td></tr>
-        <tr><td>Preescolar y escolar (1–12 años)</td><td>DAD 5% en SSN 0.45%</td><td>Balance hídrico y electrolítico adecuado</td></tr>
-        <tr><td>Adolescente (> 12 años)</td><td>Lactato de Ringer (primera línea) · SSN 0.9% si no disponible</td><td>Perfil similar al adulto</td></tr>
+        <tr><th>Edad</th><th>Solución recomendada</th><th>Tipo</th><th>Justificación</th></tr>
+        <tr><td>1 mes a 2 años</td><td>DAD 5% 500 cc + NaCl 20 cc + KCl 5 cc</td><td><strong>Tipo 1</strong></td><td>Alta demanda de glucosa · aporta sodio y potasio para el mantenimiento electrolítico</td></tr>
+        <tr><td>2–5 años</td><td>DAD 5% en SSN 0.9% + KCl 5 cc</td><td><strong>Tipo 2</strong></td><td>Menor requerimiento de glucosa · mayor necesidad de sodio</td></tr>
+        <tr><td>5–10 años</td><td>Lactato de Ringer 500 cc + KCl 5 cc</td><td><strong>Tipo 3</strong></td><td>Solución balanceada · perfil electrolítico más cercano al plasma</td></tr>
+        <tr><td>> 10 años</td><td>Lactato de Ringer o SSN 0.9%</td><td>—</td><td>Perfil similar al adulto · LR preferido por ser solución balanceada</td></tr>
       </table>
+      <div class="alert alert-amber">
+        <strong>Nota importante:</strong> El KCl solo se agrega cuando el paciente tiene diuresis confirmada y el potasio sérico es normal o bajo. Nunca agregar KCl en anuria o hiperpotasemia.
+      </div>
     </div>
     <div class="card">
       <h3>Calculadora de líquidos basales</h3>
