@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller de Líquidos en Pediatría</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#111827;min-height:100vh;}
+
+/* TOP BAR */
+.top-bar{background:#1e3a5f;color:#fff;padding:13px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.top-title{font-size:14px;font-weight:600;}
+.top-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.progress-wrap{display:flex;align-items:center;gap:10px;}
+.progress-bar{width:120px;height:6px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:#fbbf24;border-radius:99px;transition:width .4s;}
+.progress-txt{font-size:11px;opacity:.8;}
+
+/* NAV MÓDULOS */
+.mod-nav{display:flex;overflow-x:auto;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:57px;z-index:99;}
+.mod-btn{padding:11px 18px;font-size:12px;font-weight:500;color:#6b7280;border:none;background:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px;}
+.mod-btn.active{color:#1d4ed8;border-bottom-color:#1d4ed8;}
+.mod-btn.done{color:#059669;border-bottom-color:#059669;}
+.mod-btn .check{display:none;font-size:11px;}
+.mod-btn.done .check{display:inline;}
+
+.container{max-width:820px;margin:0 auto;padding:20px 16px 60px;}
+
+/* MÓDULO HEADER */
+.mod-header{background:linear-gradient(135deg,#1e3a5f,#1d4ed8);border-radius:12px;padding:18px 22px;margin-bottom:16px;color:#fff;}
+.mod-header h2{font-size:17px;font-weight:700;margin-bottom:4px;}
+.mod-header p{font-size:12px;opacity:.85;}
+
+/* VIDEO */
+.video-wrap{background:#000;border-radius:10px;overflow:hidden;margin-bottom:12px;position:relative;padding-top:56.25%;}
+.video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
+.video-label{font-size:11px;color:#6b7280;margin-bottom:8px;font-weight:500;}
+
+/* CARDS */
+.card{background:#fff;border:.5px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin-bottom:12px;}
+.card h3{font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:8px;}
+.card p{font-size:12.5px;color:#374151;line-height:1.65;margin-bottom:6px;}
+
+/* TABLA */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0;}
+.tbl th{background:#1e3a5f;color:#fff;padding:7px 10px;text-align:left;font-weight:500;font-size:11px;}
+.tbl td{padding:6px 10px;border-bottom:.5px solid #e5e7eb;}
+.tbl tr:nth-child(even) td{background:#f9fafb;}
+.tbl td:first-child{font-weight:600;color:#1e3a5f;}
+
+/* ALERTS */
+.alert{border-radius:8px;padding:10px 14px;margin:8px 0;font-size:12px;line-height:1.65;}
+.alert-blue{background:#dbeafe;border-left:3px solid #1d4ed8;color:#1e40af;}
+.alert-green{background:#d1fae5;border-left:3px solid #059669;color:#065f46;}
+.alert-amber{background:#fef3c7;border-left:3px solid #d97706;color:#92400e;}
+.alert-red{background:#fee2e2;border-left:3px solid #dc2626;color:#991b1b;}
+.alert-purple{background:#ede9fe;border-left:3px solid #7c3aed;color:#5b21b6;}
+
+/* CALCULADORA */
+.calc-wrap{background:#f8fafc;border:.5px solid #e2e8f0;border-radius:8px;padding:14px;margin:10px 0;}
+.calc-title{font-size:12px;font-weight:600;color:#374151;margin-bottom:10px;}
+.field-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;}
+.field{flex:1;min-width:100px;}
+.field label{display:block;font-size:11px;font-weight:500;color:#6b7280;margin-bottom:4px;}
+.field input,.field select{width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:13px;}
+.field input:focus,.field select:focus{outline:none;border-color:#1d4ed8;}
+.btn-calc{background:#1e3a5f;color:#fff;border:none;padding:9px 18px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;}
+.btn-calc:hover{background:#1d4ed8;}
+.result-box{background:#fff;border:.5px solid #e5e7eb;border-radius:8px;padding:12px 16px;margin-top:10px;display:none;}
+.result-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid #f1f5f9;font-size:12px;}
+.result-row:last-child{border-bottom:none;}
+.result-label{color:#6b7280;}
+.result-val{font-weight:700;color:#1e3a5f;font-size:14px;}
+.result-steps{background:#f9fafb;border-radius:6px;padding:10px;margin-top:8px;font-size:11px;color:#374151;line-height:1.8;font-family:monospace;white-space:pre-wrap;}
+
+/* CASO CLÍNICO */
+.caso-wrap{background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.caso-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.caso-num{background:#1e3a5f;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;}
+.caso-title{font-size:13px;font-weight:700;color:#1e3a5f;}
+.caso-clinico{background:#f8fafc;border-radius:8px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:#374151;margin-bottom:12px;border-left:3px solid #1d4ed8;}
+.caso-sv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-bottom:12px;}
+.sv-item{background:#eff6ff;border-radius:6px;padding:6px 10px;text-align:center;}
+.sv-label{font-size:9px;color:#6b7280;font-weight:500;display:block;}
+.sv-val{font-size:13px;font-weight:700;color:#1e3a5f;}
+
+/* PREGUNTA */
+.q-label{font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.q-text{font-size:13px;font-weight:600;color:#111827;margin-bottom:10px;line-height:1.5;}
+.opts{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.opt{background:#fff;border:1.5px solid #d1d5db;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:12.5px;display:flex;gap:10px;align-items:flex-start;transition:all .15s;}
+.opt:hover:not(.disabled){background:#f9fafb;border-color:#94a3b8;}
+.opt.disabled{cursor:not-allowed;opacity:.7;}
+.opt.correct{border-color:#059669;background:#d1fae5;}
+.opt.incorrect{border-color:#dc2626;background:#fee2e2;}
+.opt-letter{font-weight:700;font-size:11px;min-width:18px;flex-shrink:0;margin-top:1px;color:#6b7280;}
+.opt.correct .opt-letter{color:#065f46;}
+.opt.incorrect .opt-letter{color:#991b1b;}
+.fb{border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.65;margin-top:8px;border:.5px solid;}
+.fb-ok{background:#d1fae5;color:#065f46;border-color:#6ee7b7;}
+.fb-err{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
+.key-box{background:#eff6ff;border:.5px solid #93c5fd;border-radius:7px;padding:9px 13px;margin-top:8px;font-size:11.5px;color:#1e40af;line-height:1.65;}
+
+/* BOTONES */
+.btn-next{background:#1e3a5f;color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;margin-top:10px;width:100%;}
+.btn-next:hover{background:#1d4ed8;}
+.btn-show{background:#f1f5f9;color:#374151;border:.5px solid #d1d5db;padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;margin-top:8px;}
+.btn-show:hover{background:#e2e8f0;}
+
+/* RESULTADO FINAL */
+.final-card{background:#fff;border-radius:12px;padding:28px;text-align:center;border:.5px solid #e5e7eb;}
+.final-score{font-size:52px;font-weight:700;margin:10px 0 4px;}
+.final-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+.fg-item{background:#f9fafb;border-radius:8px;padding:10px;}
+.fg-val{font-size:20px;font-weight:700;color:#1e3a5f;}
+.fg-lbl{font-size:10px;color:#6b7280;margin-top:2px;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-title">Taller de Líquidos en Pediatría</div>
+    <div class="top-sub">Hospital Simulado · Universidad de La Sabana · 2026</div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <span class="progress-txt" id="prog-txt">0 / 10</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="mod-nav">
+  <button class="mod-btn active" onclick="irMod(0)" id="nav0">💧 Líquidos basales <span class="check">✓</span></button>
+  <button class="mod-btn" onclick="irMod(1)" id="nav1">🫧 Rehidratación <span class="check">✓</span></button>
+  <button class="mod-btn" onclick="irMod(2)" id="nav2">💉 Infusiones continuas <span class="check">✓</span></button>
+</div>
+
+<div class="container" id="main"></div>
+
+<script>
+// ── ESTADO ────────────────────────────────────────────────────────────────
+let modActual = 0;
+let qActual = 0;
+let respondido = false;
+let totalCorrectas = 0;
+let totalPreguntas = 0;
+let modDone = [false, false, false];
+
+// ── MÓDULOS ───────────────────────────────────────────────────────────────
+const MODS = [
+  // ══════════════════════════════════════════════════════════════════════
+  // MÓDULO 1 — LÍQUIDOS BASALES
+  // ══════════════════════════════════════════════════════════════════════
+  {
+    titulo: '💧 Módulo 1 — Líquidos basales en pediatría',
+    subtitulo: 'Holliday-Segar · Regla 4-2-1 · Calculadora',
+    teoria: `
+    <div class="video-label">📹 Video — Líquidos basales en pediatría</div>
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/i4FQJYzzPUc" allowfullscreen></iframe>
+    </div>
+    <div class="card">
+      <h3>¿Por qué necesitamos calcular líquidos basales?</h3>
+      <p>El cuerpo pierde agua constantemente por orina, respiración, sudor y heces, incluso en reposo. Cuando un niño no puede alimentarse o hidratarse por vía oral, debemos calcular exactamente cuánto líquido necesita para mantenerse en equilibrio.</p>
+      <p>El método más utilizado en pediatría es el de <strong>Holliday y Segar (1957)</strong>, también conocido como la regla <strong>4-2-1</strong>.</p>
+    </div>
+    <div class="card">
+      <h3>Método de Holliday-Segar — Regla 4-2-1</h3>
+      <p>Se calcula según el peso del paciente, aplicando una tasa diferente para cada rango:</p>
+      <table class="tbl">
+        <tr><th>Rango de peso</th><th>Tasa horaria</th><th>Tasa diaria</th></tr>
+        <tr><td>Primeros 10 kg</td><td>4 mL/kg/h</td><td>100 mL/kg/día</td></tr>
+        <tr><td>Siguientes 10 kg (10–20 kg)</td><td>2 mL/kg/h</td><td>50 mL/kg/día</td></tr>
+        <tr><td>Cada kg > 20 kg</td><td>1 mL/kg/h</td><td>20 mL/kg/día</td></tr>
+      </table>
+      <div class="alert alert-blue">
+        <strong>¿Cómo se aplica?</strong> Se suman los tres rangos según el peso del paciente. Por ejemplo, un niño de 25 kg:<br>
+        · 10 kg × 4 = 40 mL/h (primeros 10 kg)<br>
+        · 10 kg × 2 = 20 mL/h (siguientes 10 kg)<br>
+        · 5 kg × 1 = 5 mL/h (los últimos 5 kg)<br>
+        · <strong>Total = 65 mL/h</strong>
+      </div>
+    </div>
+    <div class="card">
+      <h3>¿Qué solución se usa para el mantenimiento?</h3>
+      <table class="tbl">
+        <tr><th>Grupo etario</th><th>Solución recomendada</th><th>Justificación</th></tr>
+        <tr><td>Recién nacido (0–28 días)</td><td>Dextrosa 10% + NaCl 0.9% en proporción 4:1</td><td>Alta demanda de glucosa · riñón inmaduro</td></tr>
+        <tr><td>Lactante (1–12 meses)</td><td>Dextrosa 5% + SSN 0.9% (1:4) o DAD 5%</td><td>Requerimiento glucosa + mantenimiento de Na</td></tr>
+        <tr><td>Preescolar y escolar (1–12 años)</td><td>DAD 5% en SSN 0.45%</td><td>Balance hídrico y electrolítico adecuado</td></tr>
+        <tr><td>Adolescente (> 12 años)</td><td>Lactato de Ringer (primera línea) · SSN 0.9% si no disponible</td><td>Perfil similar al adulto</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Calculadora de líquidos basales</h3>
+      <div class="calc-wrap">
+        <div class="field-row">
+          <div class="field"><label>Peso (kg)</label><input type="number" id="m1-peso" min="0.5" max="100" step="0.1" placeholder="Ej: 18"></div>
+          <button class="btn-calc" onclick="calcBasal()">Calcular</button>
+        </div>
+        <div class="result-box" id="m1-result">
+          <div class="result-row"><span class="result-label">Volumen horario</span><span class="result-val" id="m1-hora">—</span></div>
+          <div class="result-row"><span class="result-label">Volumen diario</span><span class="result-val" id="m1-dia">—</span></div>
+          <div class="result-steps" id="m1-steps"></div>
+        </div>
+      </div>
+    </div>`,
+    preguntas: [
+      {
+        caso: {
+          num:'Caso 1', nombre:'Tomás · 3 años · 14 kg',
+          texto:'Tomás es un niño de 3 años que ingresa al servicio de urgencias para observación por traumatismo craneal leve. El médico decide dejarlo en observación con líquidos IV de mantenimiento mientras se descartan complicaciones. No tiene signos de deshidratación. Peso: 14 kg.',
+          sv: [{l:'Edad',v:'3 años'},{l:'Peso',v:'14 kg'},{l:'Deshidratación',v:'No'},{l:'Diagnóstico',v:'TCE leve'}]
+        },
+        q:'Aplicando la regla 4-2-1, ¿cuál es el volumen de mantenimiento correcto para Tomás?',
+        opts:[
+          {t:'40 mL/h', ok:false, fb:'Recuerda que 40 mL/h sería solo para los primeros 10 kg (10×4). Tomás pesa 14 kg, así que hay 4 kg adicionales en el rango de 10-20 kg que también deben sumarse.'},
+          {t:'48 mL/h', ok:true, fb:'Correcto. 10 kg × 4 = 40 mL/h + 4 kg × 2 = 8 mL/h → Total = 48 mL/h. Los 4 kg que están entre 10 y 20 kg se multiplican por 2, no por 4.'},
+          {t:'56 mL/h', ok:false, fb:'56 mL/h correspondería a un niño de 18 kg (10×4 + 8×2 = 56). Para 14 kg la cuenta es 10×4 + 4×2 = 48 mL/h.'},
+          {t:'14 mL/h', ok:false, fb:'14 mL/h es simplemente el peso multiplicado por 1, lo cual no corresponde a la fórmula de Holliday-Segar. Aplica la regla 4-2-1 por rangos.'},
+        ],
+        key:'Regla 4-2-1: primeros 10 kg × 4, siguientes 10 kg × 2, kg > 20 × 1. Siempre sumar los tres rangos según el peso del paciente.'
+      },
+      {
+        caso: {
+          num:'Caso 2', nombre:'Luciana · 8 meses · 8 kg',
+          texto:'Luciana, 8 meses, 8 kg. Ingresa por bronquiolitis moderada. Requiere líquidos de mantenimiento IV porque no tolera la vía oral por dificultad respiratoria. Sin signos de deshidratación.',
+          sv: [{l:'Edad',v:'8 meses'},{l:'Peso',v:'8 kg'},{l:'Diagnóstico',v:'Bronquiolitis'},{l:'Vía oral',v:'No tolera'}]
+        },
+        q:'¿Cuál es el volumen horario de mantenimiento correcto para Luciana y qué solución elegirías?',
+        opts:[
+          {t:'32 mL/h · DAD 5% en SSN 0.45%', ok:false, fb:'El volumen es correcto (8×4=32 mL/h), pero la solución no. Para un lactante de 8 meses se prefiere Dextrosa 5% + SSN 0.9% (DAD 5%) o una solución que incluya glucosa para suplir sus requerimientos energéticos. El DAD en SSN 0.45% se usa más en preescolar y escolar.'},
+          {t:'32 mL/h · DAD 5% en SSN 0.9% o DAD 5%', ok:true, fb:'Correcto. Luciana pesa 8 kg, todos en el primer rango → 8 × 4 = 32 mL/h. Como es lactante menor de 12 meses, la solución recomendada incluye dextrosa al 5% para cubrir sus requerimientos de glucosa, más sodio para el mantenimiento electrolítico.'},
+          {t:'16 mL/h · SSN 0.9%', ok:false, fb:'16 mL/h sería la mitad de lo calculado. La fórmula para 8 kg (todos en el primer rango) es 8 × 4 = 32 mL/h. Además, SSN 0.9% sin dextrosa no es la primera opción en lactantes que requieren glucosa.'},
+          {t:'40 mL/h · Lactato de Ringer', ok:false, fb:'40 mL/h corresponde al máximo del primer rango (10 kg × 4), pero Luciana pesa 8 kg → 32 mL/h. El Lactato de Ringer tampoco es la primera elección en lactantes — se prefiere una solución con dextrosa.'},
+        ],
+        key:'En lactantes menores de 12 meses usar siempre soluciones con dextrosa (DAD 5%) para cubrir requerimientos de glucosa. El volumen se calcula igual con Holliday-Segar.'
+      },
+    ]
+  },
+
+  // ══════════════════════════════════════════════════════════════════════
+  // MÓDULO 2 — REHIDRATACIÓN
+  // ══════════════════════════════════════════════════════════════════════
+  {
+    titulo: '🫧 Módulo 2 — Rehidratación en pediatría',
+    subtitulo: 'Evaluación · Planes AIEPI · Esquema lento · Cálculo del déficit',
+    teoria: `
+    <div class="video-label">📹 Video 1 — Reposición hídrica en pediatría</div>
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/PopVLbIT8zM" allowfullscreen></iframe>
+    </div>
+    <div class="video-label" style="margin-top:14px">📹 Video 2 — Plan A, B y C de AIEPI</div>
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/DSDJ9iglFpU" allowfullscreen></iframe>
+    </div>
+    <div class="card">
+      <h3>Evaluación del grado de deshidratación</h3>
+      <p>La deshidratación ocurre cuando el cuerpo pierde más líquido del que ingiere. La evaluación clínica es el pilar del diagnóstico — el peso habitual ayuda a calcular el porcentaje de pérdida.</p>
+      <table class="tbl">
+        <tr><th>Parámetro</th><th>Sin deshidratación</th><th>Deshidratación (algún grado)</th><th>Deshidratación grave</th></tr>
+        <tr><td>Estado general</td><td>Alerta · activo</td><td>Irritable · decaído</td><td>Letárgico · inconsciente</td></tr>
+        <tr><td>Ojos</td><td>Normales</td><td>Hundidos</td><td>Muy hundidos</td></tr>
+        <tr><td>Lágrimas</td><td>Presentes</td><td>Disminuidas</td><td>Ausentes</td></tr>
+        <tr><td>Boca y lengua</td><td>Húmedas</td><td>Secas</td><td>Muy secas · no bebe</td></tr>
+        <tr><td>Llenado capilar</td><td>< 2 seg</td><td>2–3 seg</td><td>> 3 seg</td></tr>
+        <tr><td>Turgor cutáneo</td><td>Normal</td><td>Disminuido</td><td>Pliegue persistente</td></tr>
+        <tr><td>FC y pulso</td><td>Normal</td><td>Taquicardia leve</td><td>Taquicardia + pulso débil</td></tr>
+        <tr><td>Diuresis</td><td>Normal</td><td>Oliguria</td><td>Anuria</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Planes de hidratación AIEPI</h3>
+      <table class="tbl">
+        <tr><th>Plan</th><th>Indicación</th><th>¿Cómo?</th></tr>
+        <tr><td>Plan A</td><td>Sin deshidratación · manejo en casa</td><td>Más líquidos de lo habitual · continuar alimentación · zinc 10–20 mg/día × 14 días · signos de alarma</td></tr>
+        <tr><td>Plan A supervisado</td><td>Diarrea alto gasto (≥10 dep/día) · vómito persistente · rechazo vía oral</td><td>SRO supervisadas en sala de hidratación · evaluación cada hora</td></tr>
+        <tr><td>Plan B</td><td>Deshidratación sin signos de gravedad</td><td>SRO 75 mL/kg en 4 horas · evaluar cada hora · 96% responde</td></tr>
+        <tr><td>Plan C</td><td>Deshidratación grave o con intolerancia a VO</td><td>Lactato de Ringer 100 mL/kg de Lactato de Ringer IV según esquema · reevaluar cada 30 min</td></tr>
+      </table>
+      <div class="alert alert-green">
+        <strong>⚡ Actualización 2022 — Soluciones para rehidratación IV:</strong><br>
+        Las guías ESPGHAN 2022 recomiendan el <strong>Lactato de Ringer</strong> como solución de primera línea para rehidratación IV en pediatría, desplazando a la SSN 0.9%. Razones:<br>
+        · Es una solución <strong>balanceada</strong> — composición más cercana al plasma<br>
+        · Menor riesgo de <strong>acidosis hiperclorémica</strong> (complicación de SSN 0.9% en grandes volúmenes)<br>
+        · Mejor tolerancia metabólica en pacientes críticos<br>
+        La SSN 0.9% sigue siendo válida cuando no hay LR disponible.
+      </div>
+      <div class="alert alert-blue">
+        <strong>SRO-75 (baja osmolaridad):</strong> 245 mOsm/L · Na 75 mEq/L · Glucosa 75 mmol/L<br>
+        Reduce 33% la necesidad de líquidos IV comparado con SRO-90 · Reduce vómito 30% · Reduce volumen fecal 20%
+      </div>
+    </div>
+    <div class="card">
+      <h3>Plan C — Esquema lento (3 fases)</h3>
+      <p>Cuando se requiere hidratación IV, el manejo se organiza en 3 fases:</p>
+      <table class="tbl">
+        <tr><th>Fase</th><th>Objetivo</th><th>Volumen</th><th>Solución</th></tr>
+        <tr><td>Fase I — Repleción vascular</td><td>Restaurar la volemia</td><td>Bolo 20 mL/kg en 5–60 min · máximo 3 bolos</td><td>Lactato de Ringer (primera línea) · SSN 0.9% si no disponible</td></tr>
+        <tr><td>Fase II — Déficit + basales</td><td>Reponer el agua perdida y los requerimientos diarios</td><td>Ver cálculo abajo · 50% en primeras 8h · 50% en 16h siguientes</td><td>Según grupo etario</td></tr>
+        <tr><td>Fase III — Pérdidas actuales</td><td>Reponer lo que sigue perdiendo (diarrea, vómito)</td><td>mL a mL según pérdidas medidas</td><td>SSN 0.9% o SRO</td></tr>
+      </table>
+      <div class="alert alert-purple">
+        <strong>Fórmula clave — Fase II:</strong><br>
+        <strong>Total Fase II = Déficit hídrico + Necesidades basales − Bolos administrados</strong><br><br>
+        <strong>Déficit según grado (< 10 kg):</strong> Grado I: 50 mL/kg · Grado II: 100 mL/kg · Grado III: 150 mL/kg<br>
+        <strong>Déficit según grado (> 10 kg):</strong> Grado I: 30 mL/kg · Grado II: 60 mL/kg · Grado III: 90 mL/kg
+      </div>
+    </div>
+    <div class="card">
+      <h3>Calculadora de rehidratación</h3>
+      <div class="calc-wrap">
+        <div class="field-row">
+          <div class="field"><label>Peso (kg)</label><input type="number" id="m2-peso" min="1" max="80" step="0.1" placeholder="Ej: 12"></div>
+          <div class="field">
+            <label>Grado de deshidratación</label>
+            <select id="m2-grado">
+              <option value="">Seleccionar...</option>
+              <option value="1">Grado I — leve</option>
+              <option value="2">Grado II — moderado</option>
+              <option value="3">Grado III — grave</option>
+            </select>
+          </div>
+          <div class="field"><label>Bolos dados (mL)</label><input type="number" id="m2-bolos" min="0" step="1" placeholder="0 si ninguno"></div>
+          <button class="btn-calc" onclick="calcRehid()">Calcular</button>
+        </div>
+        <div class="result-box" id="m2-result">
+          <div class="result-row"><span class="result-label">Déficit hídrico</span><span class="result-val" id="m2-deficit">—</span></div>
+          <div class="result-row"><span class="result-label">Necesidades basales (24h)</span><span class="result-val" id="m2-basales">—</span></div>
+          <div class="result-row"><span class="result-label">Total Fase II</span><span class="result-val" id="m2-total">—</span></div>
+          <div class="result-row"><span class="result-label">Velocidad primeras 8h</span><span class="result-val" id="m2-v1">—</span></div>
+          <div class="result-row"><span class="result-label">Velocidad siguientes 16h</span><span class="result-val" id="m2-v2">—</span></div>
+          <div class="result-steps" id="m2-steps"></div>
+        </div>
+      </div>
+    </div>`,
+    preguntas: [
+      {
+        caso:{
+          num:'Caso 3', nombre:'Salvador · 2 años · 12 kg',
+          texto:'Salvador, 2 años, 12 kg. Cuadro de 3 días de deposiciones líquidas. Últimas 4 horas: 6 deposiciones abundantes. Al examen: intranquilo, mucosa oral seca, tono ocular disminuido, llenado capilar 2–3 segundos.',
+          sv:[{l:'FC',v:'114 lpm'},{l:'FR',v:'34 rpm'},{l:'SpO₂',v:'94%'},{l:'T°',v:'36.5°C'},{l:'Peso',v:'12 kg'}]
+        },
+        q:'Con base en el examen físico de Salvador, ¿cuál es el grado de deshidratación y el plan de manejo inicial correcto?',
+        opts:[
+          {t:'Sin deshidratación — Plan A en casa', ok:false, fb:'Salvador tiene mucosa seca, ojos hundidos y llenado capilar de 2–3 seg — son signos de deshidratación. No puede irse a casa sin tratamiento.'},
+          {t:'Deshidratación moderada (Grado II) — Plan B con SRO 75 mL/kg en 4 horas', ok:true, fb:'Correcto. Salvador tiene 2 o más signos de deshidratación (mucosa seca, ojos hundidos, llenado 2-3 seg, irritable) pero sin signos de gravedad (no letárgico, no pulso débil, no anuria). Esto corresponde a deshidratación moderada → Plan B: SRO 75 mL/kg en 4 h = 75 × 12 = 900 mL en 4 horas, supervisado.'},
+          {t:'Deshidratación grave (Grado III) — Plan C con bolo IV inmediato', ok:false, fb:'Para deshidratación grave se necesitan signos como letargia, pulso muy débil, anuria o pliegue cutáneo persistente. Salvador está irritable (no letárgico) y tiene llenado de 2–3 seg (no > 3 seg). Es moderada, no grave.'},
+          {t:'Deshidratación leve (Grado I) — Plan A supervisado en sala de hidratación', ok:false, fb:'Con mucosa seca + ojos hundidos + llenado 2–3 seg, Salvador supera los criterios de deshidratación leve. La clasificación correcta es moderada y el plan es B, no A supervisado.'},
+        ],
+        key:'Deshidratación moderada = 2 o más signos presentes sin signos de gravedad → Plan B: SRO 75 mL/kg en 4 horas, supervisado, evaluar cada hora.'
+      },
+      {
+        caso:{
+          num:'Caso 4', nombre:'Daniela · 9 meses · 7.8 kg',
+          texto:'Daniela, 9 meses, 7.8 kg. 2 días de vómitos (20 episodios hoy), dolor abdominal intenso, palidez generalizada. Al examen: mucosas muy secas, tono ocular muy disminuido, llenado capilar > 4 seg, letárgica, polipneica.',
+          sv:[{l:'FC',v:'178 lpm'},{l:'FR',v:'40 rpm'},{l:'SpO₂',v:'92%'},{l:'T°',v:'37.8°C'},{l:'Peso',v:'7.8 kg'}]
+        },
+        q:'¿Cuál es el plan correcto para Daniela y cuánto le das en el primer bolo?',
+        opts:[
+          {t:'Plan B — SRO 75 mL/kg vía oral', ok:false, fb:'Daniela está letárgica con llenado > 4 seg y FC 178 — es una deshidratación grave con signos de shock. Además tiene vómitos persistentes que impiden la vía oral. El Plan B (SRO oral) está contraindicado aquí.'},
+          {t:'Plan C — Bolo IV de 20 mL/kg de Lactato de Ringer en 5–60 min', ok:true, fb:'Correcto. Daniela tiene deshidratación grave con signos de shock (FC 178, llenado > 4 seg, letargia, mucosas muy secas). Plan C: bolo 20 mL/kg = 20 × 7.8 = 156 mL de Lactato de Ringer (primera línea) en 5 a 60 minutos según respuesta. Máximo 3 bolos. Reevaluar cada 30 minutos.'},
+          {t:'Plan C — Bolo IV de 100 mL/kg en una sola infusión', ok:false, fb:'100 mL/kg es el volumen total del Plan C, pero no se da en un solo bolo. Se divide: primero bolos de 20 mL/kg (máx 3), luego el déficit restante en Fase II (50% en 8h + 50% en 16h).'},
+          {t:'Plan A supervisado — SRO en sala de hidratación', ok:false, fb:'Daniela está letárgica y con vómitos persistentes — no puede tomar SRO. Además los signos indican deshidratación grave con compromiso circulatorio. Requiere hidratación IV urgente.'},
+        ],
+        key:'Deshidratación grave + intolerancia VO = Plan C IV. Bolo inicial 20 mL/kg de Lactato de Ringer (primera línea ESPGHAN 2022) · SSN 0.9% si no disponible · máx 3 bolos · reevaluar cada 30 min.'
+      },
+      {
+        caso:{
+          num:'Caso 5', nombre:'María · 10 años · 30 kg',
+          texto:'María, 10 años, 30 kg. 6 horas de vómitos (4 episodios, último hace 1 hora), dolor abdominal tipo cólico. Al examen: alerta, mucosa con saliva filante, sin enoftalmos, llenado capilar < 2 seg, leve palidez.',
+          sv:[{l:'FC',v:'94 lpm'},{l:'FR',v:'20 rpm'},{l:'PA',v:'100/60'},{l:'SpO₂',v:'95%'},{l:'Peso',v:'30 kg'}]
+        },
+        q:'Luego de clasificar a María y definir el Plan B, ¿cuántos mL de SRO debe recibir en las primeras 4 horas?',
+        opts:[
+          {t:'750 mL en 4 horas', ok:false, fb:'750 mL sería 75 mL/kg × 10 kg. María pesa 30 kg → 75 × 30 = 2.250 mL en 4 horas. Siempre usa el peso actual del paciente.'},
+          {t:'2.250 mL en 4 horas', ok:true, fb:'Correcto. María tiene deshidratación leve-moderada (mucosa con saliva filante, algunos signos pero sin gravedad) → Plan B: SRO 75 mL/kg en 4h = 75 × 30 = 2.250 mL en 4 horas = 562 mL/hora. Evaluación cada hora.'},
+          {t:'1.500 mL en 4 horas', ok:false, fb:'1.500 mL no corresponde a ninguna fórmula estándar para María. El Plan B es siempre 75 mL/kg en 4 horas → 75 × 30 = 2.250 mL.'},
+          {t:'Plan A en casa — no necesita rehidratación supervisada', ok:false, fb:'María tiene mucosa con saliva filante y leve palidez — hay signos de deshidratación. El Plan A en casa es para pacientes sin ningún signo de deshidratación. María necesita Plan B supervisado.'},
+        ],
+        key:'Plan B = 75 mL/kg de SRO en 4 horas. Siempre usar el peso actual. Supervisar en sala de hidratación y evaluar cada hora.'
+      },
+    ]
+  },
+
+  // ══════════════════════════════════════════════════════════════════════
+  // MÓDULO 3 — INFUSIONES CONTINUAS
+  // ══════════════════════════════════════════════════════════════════════
+  {
+    titulo: '💉 Módulo 3 — Infusiones continuas en pediatría',
+    subtitulo: 'Regla de los 6 · Dopamina · Dobutamina · Cálculo de infusiones',
+    teoria: `
+    <div class="video-label">📹 Video 1 — Regla de los 6 en pediatría</div>
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/XoeS8vaapmM" allowfullscreen></iframe>
+    </div>
+    <div class="video-label" style="margin-top:14px">📹 Video 2 — Regla de los 6 en neonatos</div>
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/ahDr9Yv8EWw" allowfullscreen></iframe>
+    </div>
+    <div class="card">
+      <h3>¿Qué es una infusión continua?</h3>
+      <p>Algunos medicamentos en pediatría deben administrarse de forma continua y controlada, a dosis expresadas en <strong>microgramos por kilogramo por minuto (mcg/kg/min)</strong>. Esto aplica principalmente a:</p>
+      <ul style="margin:8px 0 0 16px;font-size:12.5px;line-height:2;">
+        <li><strong>Dopamina</strong> — inotrópico y vasopresor · dosis 2–20 mcg/kg/min</li>
+        <li><strong>Dobutamina</strong> — inotrópico · dosis 2–20 mcg/kg/min</li>
+        <li><strong>Adrenalina / Noradrenalina</strong> — vasopresor en shock</li>
+        <li><strong>Morfina / Fentanilo</strong> — analgesia continua</li>
+        <li><strong>Midazolam</strong> — sedación continua</li>
+      </ul>
+      <p style="margin-top:8px">Para calcular estas infusiones usamos la <strong>Regla de los 6</strong>.</p>
+    </div>
+    <div class="card">
+      <h3>La Regla de los 6</h3>
+      <p>La Regla de los 6 es un método para preparar soluciones de medicamentos en goteo continuo de forma que <strong>1 mL/h = 1 mcg/kg/min</strong>. Esto simplifica enormemente el ajuste de dosis a la cabecera del paciente.</p>
+      <div class="alert alert-purple">
+        <strong>Fórmula:</strong><br>
+        <strong>mg del medicamento = 6 × peso (kg)</strong><br>
+        Llevar a 100 mL con SSN 0.9% o DAD 5%<br><br>
+        Resultado: <strong>1 mL/h = 1 mcg/kg/min</strong><br>
+        Si quieres 5 mcg/kg/min → pasas a 5 mL/h<br>
+        Si quieres 10 mcg/kg/min → pasas a 10 mL/h
+      </div>
+      <div class="alert alert-amber">
+        <strong>Ejemplo — Dopamina en niño de 10 kg:</strong><br>
+        mg = 6 × 10 = 60 mg de dopamina en 100 mL<br>
+        Si el médico ordena 5 mcg/kg/min → pasas a 5 mL/h<br>
+        Si ajusta a 8 mcg/kg/min → aumentas a 8 mL/h
+      </div>
+    </div>
+    <div class="card">
+      <h3>Dopamina — efectos según la dosis</h3>
+      <table class="tbl">
+        <tr><th>Dosis (mcg/kg/min)</th><th>Receptor principal</th><th>Efecto</th><th>Indicación</th></tr>
+        <tr><td>1–3 (dosis renal)</td><td>Dopaminérgico</td><td>Vasodilatación renal · ↑ diuresis</td><td>Oliguria (uso controvertido hoy)</td></tr>
+        <tr><td>3–10 (dosis cardíaca)</td><td>Beta-1</td><td>↑ Contractilidad · ↑ FC · ↑ GC</td><td>Shock con disfunción miocárdica</td></tr>
+        <tr><td>> 10 (dosis vasopresora)</td><td>Alfa-1</td><td>Vasoconstricción · ↑ RVS · ↑ PA</td><td>Shock distributivo · hipotensión refractaria</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Calculadora — Regla de los 6</h3>
+      <div class="calc-wrap">
+        <div class="field-row">
+          <div class="field"><label>Peso (kg)</label><input type="number" id="m3-peso" min="0.5" max="100" step="0.1" placeholder="Ej: 15"></div>
+          <div class="field">
+            <label>Medicamento</label>
+            <select id="m3-med">
+              <option value="dopamina">Dopamina</option>
+              <option value="dobutamina">Dobutamina</option>
+            </select>
+          </div>
+          <div class="field"><label>Dosis deseada (mcg/kg/min)</label><input type="number" id="m3-dosis" min="1" max="20" step="0.5" placeholder="Ej: 5"></div>
+          <button class="btn-calc" onclick="calcInfusion()">Calcular</button>
+        </div>
+        <div class="result-box" id="m3-result">
+          <div class="result-row"><span class="result-label">mg del medicamento a diluir</span><span class="result-val" id="m3-mg">—</span></div>
+          <div class="result-row"><span class="result-label">Volumen a completar</span><span class="result-val" id="m3-vol">—</span></div>
+          <div class="result-row"><span class="result-label">Velocidad de infusión</span><span class="result-val" id="m3-vel">—</span></div>
+          <div class="result-row"><span class="result-label">Equivalencia</span><span class="result-val" id="m3-eq">—</span></div>
+          <div class="result-steps" id="m3-steps"></div>
+        </div>
+      </div>
+    </div>`,
+    preguntas: [
+      {
+        caso:{
+          num:'Caso 6', nombre:'Andrés · 5 años · 20 kg · Shock séptico',
+          texto:'Andrés, 5 años, 20 kg. Shock séptico en UCIP. El médico intensivista ordena iniciar dopamina a 5 mcg/kg/min. La enfermera debe preparar la solución usando la Regla de los 6.',
+          sv:[{l:'Edad',v:'5 años'},{l:'Peso',v:'20 kg'},{l:'Diagnóstico',v:'Shock séptico'},{l:'Dosis',v:'5 mcg/kg/min'}]
+        },
+        q:'Aplicando la Regla de los 6, ¿cuántos mg de dopamina se deben diluir en 100 mL y a qué velocidad se inicia la infusión?',
+        opts:[
+          {t:'60 mg en 100 mL · iniciar a 5 mL/h', ok:false, fb:'60 mg correspondería a un paciente de 10 kg (6 × 10 = 60). Andrés pesa 20 kg → 6 × 20 = 120 mg. El principio de la Regla de los 6 es multiplicar siempre por el peso real del paciente.'},
+          {t:'120 mg en 100 mL · iniciar a 5 mL/h', ok:true, fb:'Correcto. Regla de los 6: mg = 6 × 20 kg = 120 mg de dopamina en 100 mL de SSN 0.9%. La velocidad inicial es igual a la dosis deseada en mcg/kg/min → 5 mcg/kg/min = 5 mL/h. Esta es la magia de la regla: 1 mL/h = 1 mcg/kg/min.'},
+          {t:'120 mg en 100 mL · iniciar a 20 mL/h', ok:false, fb:'La preparación es correcta (120 mg en 100 mL), pero la velocidad no. Con la Regla de los 6, la velocidad en mL/h es igual a la dosis en mcg/kg/min. Como se quieren 5 mcg/kg/min → 5 mL/h, no 20 mL/h.'},
+          {t:'20 mg en 100 mL · iniciar a 5 mL/h', ok:false, fb:'20 mg no corresponde a ninguna fórmula de la Regla de los 6. La fórmula es siempre 6 × peso = mg del medicamento. Para 20 kg: 6 × 20 = 120 mg.'},
+        ],
+        key:'Regla de los 6: mg = 6 × peso (kg) en 100 mL. Velocidad en mL/h = dosis en mcg/kg/min. Resultado: 1 mL/h = 1 mcg/kg/min → ajuste de dosis simple a la cabecera.'
+      },
+      {
+        caso:{
+          num:'Caso 7', nombre:'Sofía · 3 años · 14 kg · Shock cardiogénico',
+          texto:'Sofía, 3 años, 14 kg. Miocarditis aguda con disfunción ventricular. El cardiólogo pediátrico ordena dobutamina a 8 mcg/kg/min para soporte inotrópico. Aplica la Regla de los 6.',
+          sv:[{l:'Edad',v:'3 años'},{l:'Peso',v:'14 kg'},{l:'Diagnóstico',v:'Miocarditis'},{l:'Dosis',v:'8 mcg/kg/min'}]
+        },
+        q:'¿Cuántos mg de dobutamina se diluyen y a qué velocidad se inicia? ¿Qué efecto farmacológico se busca a esta dosis?',
+        opts:[
+          {t:'84 mg en 100 mL · 8 mL/h · efecto vasopresor', ok:false, fb:'Los mg son correctos (6 × 14 = 84 mg) y la velocidad también (8 mL/h), pero el efecto no. A 8 mcg/kg/min la dobutamina actúa principalmente sobre receptores Beta-1 → efecto INOTRÓPICO (mejora la contractilidad del corazón). El efecto vasopresor (vasoconstricción) es de la dopamina a dosis altas (> 10 mcg/kg/min).'},
+          {t:'84 mg en 100 mL · 8 mL/h · efecto inotrópico positivo (mejora la contractilidad)', ok:true, fb:'Perfecto. 6 × 14 kg = 84 mg de dobutamina en 100 mL. Velocidad: 8 mcg/kg/min = 8 mL/h. La dobutamina actúa principalmente sobre receptores Beta-1 → inotrópico positivo: aumenta la contractilidad miocárdica y el gasto cardíaco. Ideal para el shock cardiogénico de Sofía.'},
+          {t:'14 mg en 100 mL · 8 mL/h · efecto inotrópico positivo', ok:false, fb:'14 mg no es correcto. La fórmula es 6 × peso → 6 × 14 = 84 mg. No confundas el peso con los mg del medicamento.'},
+          {t:'84 mg en 100 mL · 14 mL/h · efecto inotrópico positivo', ok:false, fb:'Los mg son correctos (84 mg), pero la velocidad no. La Regla de los 6 establece que la velocidad en mL/h = dosis en mcg/kg/min. Si la dosis es 8 mcg/kg/min → 8 mL/h, no 14 mL/h.'},
+        ],
+        key:'Dobutamina = inotrópico puro (Beta-1) · ideal para shock cardiogénico. Dopamina a dosis bajas = inotrópico · a dosis altas = vasopresor. La Regla de los 6 aplica igual para ambos.'
+      },
+    ]
+  }
+];
+
+// ── CALCULADORAS ──────────────────────────────────────────────────────────
+function calcBasal(){
+  const peso = parseFloat(document.getElementById('m1-peso').value);
+  if(!peso||peso<=0){alert('Ingresa el peso');return;}
+  let h=0, steps='';
+  if(peso<=10){h=peso*4;steps=`${peso} kg × 4 mL/kg/h = ${h.toFixed(1)} mL/h`;}
+  else if(peso<=20){h=10*4+(peso-10)*2;steps=`10 kg × 4 = 40 mL/h\n${(peso-10).toFixed(1)} kg × 2 = ${((peso-10)*2).toFixed(1)} mL/h\nTotal = ${h.toFixed(1)} mL/h`;}
+  else{h=10*4+10*2+(peso-20)*1;steps=`10 kg × 4 = 40 mL/h\n10 kg × 2 = 20 mL/h\n${(peso-20).toFixed(1)} kg × 1 = ${(peso-20).toFixed(1)} mL/h\nTotal = ${h.toFixed(1)} mL/h`;}
+  document.getElementById('m1-hora').textContent=h.toFixed(1)+' mL/h';
+  document.getElementById('m1-dia').textContent=(h*24).toFixed(0)+' mL/día';
+  document.getElementById('m1-steps').textContent=steps;
+  document.getElementById('m1-result').style.display='block';
+}
+
+function basalH(p){if(p<=10)return p*4;if(p<=20)return 10*4+(p-10)*2;return 10*4+10*2+(p-20);}
+
+function calcRehid(){
+  const peso=parseFloat(document.getElementById('m2-peso').value);
+  const grado=parseInt(document.getElementById('m2-grado').value);
+  const bolos=parseFloat(document.getElementById('m2-bolos').value)||0;
+  if(!peso||!grado){alert('Completa todos los campos');return;}
+  let def;
+  if(peso<10){const g=[0,50,100,150];def=peso*g[grado];}
+  else{const g=[0,30,60,90];def=peso*g[grado];}
+  const bas=basalH(peso)*24;
+  const total=def+bas-bolos;
+  const v1=(total*0.5/8).toFixed(1);
+  const v2=(total*0.5/16).toFixed(1);
+  document.getElementById('m2-deficit').textContent=def.toFixed(0)+' mL';
+  document.getElementById('m2-basales').textContent=bas.toFixed(0)+' mL/24h';
+  document.getElementById('m2-total').textContent=total.toFixed(0)+' mL';
+  document.getElementById('m2-v1').textContent=v1+' mL/h (primeras 8h)';
+  document.getElementById('m2-v2').textContent=v2+' mL/h (16h restantes)';
+  document.getElementById('m2-steps').textContent=
+    `Déficit: ${peso<10?'< 10 kg':'>10 kg'} · Grado ${grado} → ${peso<10?[50,100,150][grado-1]:[30,60,90][grado-1]} mL/kg × ${peso} = ${def.toFixed(0)} mL\nBasales: ${basalH(peso).toFixed(1)} mL/h × 24h = ${bas.toFixed(0)} mL\nBolos restados: ${bolos} mL\nTotal Fase II = ${def.toFixed(0)} + ${bas.toFixed(0)} - ${bolos} = ${total.toFixed(0)} mL\n50% en 8h → ${v1} mL/h\n50% en 16h → ${v2} mL/h`;
+  document.getElementById('m2-result').style.display='block';
+}
+
+function calcInfusion(){
+  const peso=parseFloat(document.getElementById('m3-peso').value);
+  const med=document.getElementById('m3-med').value;
+  const dosis=parseFloat(document.getElementById('m3-dosis').value);
+  if(!peso||!dosis){alert('Completa todos los campos');return;}
+  const mg=(6*peso).toFixed(1);
+  document.getElementById('m3-mg').textContent=mg+' mg';
+  document.getElementById('m3-vol').textContent='100 mL de SSN 0.9%';
+  document.getElementById('m3-vel').textContent=dosis+' mL/h';
+  document.getElementById('m3-eq').textContent='1 mL/h = 1 mcg/kg/min';
+  document.getElementById('m3-steps').textContent=
+    `Regla de los 6: mg = 6 × ${peso} kg = ${mg} mg de ${med}\nDiluir en 100 mL de SSN 0.9%\nDosis deseada: ${dosis} mcg/kg/min → ${dosis} mL/h\nPara aumentar a 10 mcg/kg/min → subir a 10 mL/h`;
+  document.getElementById('m3-result').style.display='block';
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function irMod(idx){modActual=idx;qActual=0;respondido=false;renderNav();renderMod();}
+
+function renderNav(){
+  MODS.forEach((_,i)=>{
+    const btn=document.getElementById('nav'+i);
+    btn.className='mod-btn'+(i===modActual?' active':'')+(modDone[i]?' done':'');
+  });
+}
+
+function renderMod(){
+  const mod=MODS[modActual];
+  document.getElementById('main').innerHTML=`
+    <div class="mod-header"><h2>${mod.titulo}</h2><p>${mod.subtitulo}</p></div>
+    ${mod.teoria}
+    <div id="q-area"></div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+  renderPregunta();
+}
+
+function renderPregunta(){
+  const mod=MODS[modActual];
+  if(qActual>=mod.preguntas.length){renderModFin();return;}
+  const q=mod.preguntas[qActual];
+  const letters=['A','B','C','D'];
+  document.getElementById('q-area').innerHTML=`
+    <div class="caso-wrap">
+      <div class="caso-header">
+        <span class="caso-num">${q.caso.num}</span>
+        <span class="caso-title">${q.caso.nombre}</span>
+      </div>
+      <div class="caso-clinico">${q.caso.texto}</div>
+      <div class="caso-sv">${q.caso.sv.map(s=>`<div class="sv-item"><span class="sv-label">${s.l}</span><span class="sv-val">${s.v}</span></div>`).join('')}</div>
+      <div class="q-label">Pregunta ${qActual+1} de ${mod.preguntas.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="opts" id="opts">
+        ${q.opts.map((o,i)=>`<div class="opt" id="opt${i}" onclick="responder(${i})">
+          <span class="opt-letter">${letters[i]}</span><span>${o.t}</span></div>`).join('')}
+      </div>
+      <div id="fb-area"></div>
+      <div id="next-area"></div>
+    </div>`;
+}
+
+function responder(idx){
+  if(respondido)return;
+  respondido=true;
+  totalPreguntas++;
+  const mod=MODS[modActual];
+  const q=mod.preguntas[qActual];
+  const ok=q.opts[idx].ok;
+  if(ok)totalCorrectas++;
+  document.querySelectorAll('.opt').forEach((el,i)=>{
+    el.classList.add('disabled');
+    if(q.opts[i].ok)el.classList.add('correct');
+  });
+  document.getElementById('opt'+idx).classList.add(ok?'correct':'incorrect');
+  document.getElementById('fb-area').innerHTML=`
+    <div class="fb ${ok?'fb-ok':'fb-err'}"><strong>${ok?'Correcto ✓':'No es la mejor opción ✗'}:</strong> ${q.opts[idx].fb}</div>
+    <div class="key-box"><strong>📌 Concepto clave:</strong> ${q.key}</div>`;
+  actualizarProgreso();
+  const isLastQ=qActual>=mod.preguntas.length-1;
+  const isLastMod=modActual>=MODS.length-1;
+  const na=document.getElementById('next-area');
+  const btn=document.createElement('button');
+  btn.className='btn-next';
+  if(!isLastQ){btn.textContent='Siguiente caso →';btn.onclick=()=>{qActual++;respondido=false;renderPregunta();window.scrollTo({top:800,behavior:'smooth'});};}
+  else if(!isLastMod){btn.textContent=`Continuar al Módulo ${modActual+2} →`;btn.onclick=()=>{modDone[modActual]=true;irMod(modActual+1);};}
+  else{btn.textContent='Ver resultado final →';btn.onclick=mostrarFinal;}
+  na.appendChild(btn);
+}
+
+function renderModFin(){
+  document.getElementById('q-area').innerHTML=`
+    <div style="background:#d1fae5;border-radius:10px;padding:16px;text-align:center;margin-top:12px;">
+      <p style="color:#065f46;font-weight:700;font-size:14px">✓ Módulo completado</p>
+      <button class="btn-next" style="max-width:300px;margin:10px auto" onclick="irMod(${modActual+1})">
+        Módulo ${modActual+2} →</button>
+    </div>`;}
+
+function actualizarProgreso(){
+  const pct=Math.round(totalCorrectas/Math.max(totalPreguntas,1)*100);
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-txt').textContent=`${totalCorrectas} / ${totalPreguntas}`;
+}
+
+function mostrarFinal(){
+  modDone[modActual]=true;
+  renderNav();
+  document.getElementById('mod-nav').style.display='none';
+  const pct=Math.round(totalCorrectas/totalPreguntas*100);
+  const col=pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
+  const msg=pct>=80?'Excelente dominio del contenido.':pct>=60?'Buen trabajo. Repasa los casos incorrectos.':'Revisa los módulos y vuelve a intentarlo.';
+  document.getElementById('main').innerHTML=`
+    <div class="final-card">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Resultado final — Taller de Líquidos en Pediatría</div>
+      <div class="final-score" style="color:${col}">${totalCorrectas}/${totalPreguntas}</div>
+      <div style="font-size:14px;color:${col};font-weight:600;margin-bottom:16px">${pct}% — ${msg}</div>
+      <div class="final-grid">
+        <div class="fg-item"><div class="fg-val">💧</div><div class="fg-lbl">Líquidos basales</div></div>
+        <div class="fg-item"><div class="fg-val">🫧</div><div class="fg-lbl">Rehidratación AIEPI</div></div>
+        <div class="fg-item"><div class="fg-val">💉</div><div class="fg-lbl">Infusiones continuas</div></div>
+      </div>
+      <div class="alert alert-blue" style="text-align:left;margin-top:8px">
+        <strong>Temas evaluados:</strong><br>
+        · Regla 4-2-1 de Holliday-Segar y selección de soluciones por grupo etario<br>
+        · Clasificación de deshidratación y planes AIEPI (A, B y C)<br>
+        · Esquema lento 3 fases y fórmula: Total = Déficit + Basales − Bolos<br>
+        · Regla de los 6 para dopamina y dobutamina
+      </div>
+      <button class="btn-next" style="margin-top:12px" onclick="location.reload()">Reiniciar taller</button>
+    </div>`;}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderNav();
+renderMod();
+</script>
+</body>
+</html>
