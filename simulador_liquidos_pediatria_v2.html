@@ -115,6 +115,35 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#111827;min-heigh
 .fg-item{background:#f9fafb;border-radius:8px;padding:10px;}
 .fg-val{font-size:20px;font-weight:700;color:#1e3a5f;}
 .fg-lbl{font-size:10px;color:#6b7280;margin-top:2px;}
+
+/* EVALUACIÓN */
+.eval-wrap{background:#fff;border:2px solid #dc2626;border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.eval-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.eval-num{background:#dc2626;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;}
+.eval-title{font-size:13px;font-weight:700;color:#dc2626;}
+.eval-caso{background:#fff5f5;border-radius:8px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:#374151;margin-bottom:12px;border-left:3px solid #dc2626;}
+.eval-sv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-bottom:12px;}
+.eval-sv-item{background:#fee2e2;border-radius:6px;padding:6px 10px;text-align:center;}
+.eval-sv-label{font-size:9px;color:#991b1b;font-weight:500;display:block;}
+.eval-sv-val{font-size:13px;font-weight:700;color:#991b1b;}
+.eval-opt{background:#fff;border:1.5px solid #d1d5db;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:12.5px;display:flex;gap:10px;align-items:flex-start;transition:all .15s;margin-bottom:6px;}
+.eval-opt:hover:not(.disabled){background:#f9fafb;border-color:#94a3b8;}
+.eval-opt.disabled{cursor:not-allowed;}
+.eval-opt.selected{border-color:#dc2626;background:#fff5f5;}
+.eval-opt.correct{border-color:#059669;background:#d1fae5;}
+.eval-opt.incorrect{border-color:#dc2626;background:#fee2e2;}
+.eval-opt-letter{font-weight:700;font-size:11px;min-width:18px;flex-shrink:0;margin-top:1px;color:#6b7280;}
+.code-input{width:100%;padding:12px 14px;border:2px solid #d1d5db;border-radius:8px;font-size:16px;font-family:monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.code-input:focus{outline:none;border-color:#dc2626;}
+.result-final{background:#fff;border-radius:12px;padding:24px;text-align:center;}
+.result-code{font-size:13px;font-weight:700;color:#6b7280;margin-bottom:4px;}
+.result-score-big{font-size:56px;font-weight:700;margin:8px 0 4px;}
+.result-table{width:100%;border-collapse:collapse;font-size:12px;margin:16px 0;text-align:left;}
+.result-table th{background:#1e3a5f;color:#fff;padding:7px 10px;font-size:11px;}
+.result-table td{padding:6px 10px;border-bottom:.5px solid #e5e7eb;}
+.result-table tr:nth-child(even) td{background:#f9fafb;}
+.tick-ok{color:#059669;font-weight:700;}
+.tick-err{color:#dc2626;font-weight:700;}
 </style>
 </head>
 <body>
@@ -135,6 +164,7 @@ body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#111827;min-heigh
   <button class="mod-btn active" onclick="irMod(0)" id="nav0">💧 Líquidos basales <span class="check">✓</span></button>
   <button class="mod-btn" onclick="irMod(1)" id="nav1">🫧 Rehidratación <span class="check">✓</span></button>
   <button class="mod-btn" onclick="irMod(2)" id="nav2">💉 Infusiones continuas <span class="check">✓</span></button>
+  <button class="mod-btn" onclick="irEval()" id="nav-eval" style="margin-left:auto;color:#dc2626;border-bottom-color:transparent;">📝 Evaluación</button>
 </div>
 
 <div class="container" id="main"></div>
@@ -667,6 +697,223 @@ function mostrarFinal(){
       </div>
       <button class="btn-next" style="margin-top:12px" onclick="location.reload()">Reiniciar taller</button>
     </div>`;}
+
+// ── EVALUACIÓN ───────────────────────────────────────────────────────────
+const EVAL_CASOS = [
+  // CASO E1 — Basales
+  {
+    num:'E1', modulo:'Líquidos basales',
+    nombre:'Camila · 6 años · 22 kg',
+    texto:'Camila, 6 años, 22 kg. Ingresa por apendicitis aguda y es llevada a cirugía. En el postoperatorio inmediato no puede ingerir nada por vía oral. El cirujano solicita líquidos de mantenimiento IV.',
+    sv:[{l:'Edad',v:'6 años'},{l:'Peso',v:'22 kg'},{l:'Estado',v:'Postop. inmediato'},{l:'VO',v:'No tolera'}],
+    q:'¿Cuál es el volumen horario de mantenimiento correcto para Camila?',
+    opts:[
+      {t:'52 mL/h', ok:false},
+      {t:'62 mL/h', ok:true},
+      {t:'88 mL/h', ok:false},
+      {t:'22 mL/h', ok:false},
+    ]
+  },
+  // CASO E2 — Basales
+  {
+    num:'E2', modulo:'Líquidos basales',
+    nombre:'Neonato · RN término · 3.4 kg',
+    texto:'Recién nacido de 38 semanas, 3.4 kg. Primer día de vida. Nacido por cesárea, madre con diabetes gestacional. Glucemia al nacimiento: 38 mg/dL, asintomático. El pediatra decide iniciar líquidos IV para garantizar un flujo metabólico de glucosa adecuado (5.5 mg/kg/min).',
+    sv:[{l:'EG',v:'38 sem'},{l:'Peso',v:'3.4 kg'},{l:'Glucemia',v:'38 mg/dL'},{l:'Día de vida',v:'1'}],
+    q:'¿Cuál es la solución y velocidad correctas para este neonato en el primer día de vida?',
+    opts:[
+      {t:'Dextrosa 10% · 11.3 mL/h — 80 mL/kg/día garantiza FM de glucosa 5.5 mg/kg/min', ok:true},
+      {t:'Dextrosa 10% + NaCl + KCl (Tipo 1) · 13.6 mL/h — Holliday-Segar con electrolitos', ok:false},
+      {t:'DAD 5% en SSN 0.9% · 11.3 mL/h — solución estándar para neonatos', ok:false},
+      {t:'Dextrosa 10% · 13.6 mL/h — Holliday-Segar 4 mL/kg/h', ok:false},
+    ]
+  },
+  // CASO E3 — Rehidratación
+  {
+    num:'E3', modulo:'Rehidratación',
+    nombre:'Julián · 14 meses · 9.5 kg',
+    texto:'Julián, 14 meses, 9.5 kg. 2 días de diarrea acuosa, 8 deposiciones en las últimas 12 horas. Al examen: irritable, ojos levemente hundidos, mucosas húmedas, llenado capilar 1.5 segundos, turgor normal. Acepta líquidos por vía oral.',
+    sv:[{l:'FC',v:'118 lpm'},{l:'FR',v:'32 rpm'},{l:'T°',v:'37.2°C'},{l:'Peso',v:'9.5 kg'}],
+    q:'¿Cuál es la clasificación correcta y el plan de manejo para Julián?',
+    opts:[
+      {t:'Sin deshidratación — Plan A en casa con SRO y signos de alarma', ok:false},
+      {t:'Deshidratación (algún grado) — Plan B con SRO 75 mL/kg en 4 horas supervisado', ok:true},
+      {t:'Deshidratación grave — Plan C con bolo IV de Lactato de Ringer 20 mL/kg', ok:false},
+      {t:'Deshidratación leve — Plan A supervisado en sala de hidratación', ok:false},
+    ]
+  },
+  // CASO E4 — Rehidratación
+  {
+    num:'E4', modulo:'Rehidratación',
+    nombre:'Gabriela · 4 años · 16 kg',
+    texto:'Gabriela, 4 años, 16 kg (peso habitual 17.5 kg). Vómitos y diarrea por 3 días. Al examen: decaída, ojos hundidos, mucosas secas, llenado capilar 3 segundos, turgor disminuido, FC 138 lpm. No tolera la vía oral por vómitos persistentes.',
+    sv:[{l:'FC',v:'138 lpm'},{l:'FR',v:'28 rpm'},{l:'T°',v:'37.8°C'},{l:'Peso actual',v:'16 kg'},{l:'Peso habitual',v:'17.5 kg'}],
+    q:'Gabriela requiere Plan C. ¿Cuánto es el bolo inicial y con qué solución?',
+    opts:[
+      {t:'160 mL de SSN 0.9% — el bolo siempre debe ser con SSN 0.9%', ok:false},
+      {t:'500 mL de Lactato de Ringer en 1 hora — volumen total del Plan C de una vez', ok:false},
+      {t:'320 mL de Lactato de Ringer en 5–60 min — bolo 20 mL/kg', ok:true},
+      {t:'640 mL de Lactato de Ringer — bolo 40 mL/kg para deshidratación grave', ok:false},
+    ]
+  },
+  // CASO E5 — Infusiones
+  {
+    num:'E5', modulo:'Infusiones continuas',
+    nombre:'Felipe · 2 años · 12 kg · Shock séptico',
+    texto:'Felipe, 2 años, 12 kg. Shock séptico refractario a líquidos. El intensivista indica iniciar dopamina a 7 mcg/kg/min usando la Regla de los 6.',
+    sv:[{l:'Edad',v:'2 años'},{l:'Peso',v:'12 kg'},{l:'Diagnóstico',v:'Shock séptico'},{l:'Dosis',v:'7 mcg/kg/min'}],
+    q:'¿Cuántos mg de dopamina se preparan y a qué velocidad se inicia la infusión?',
+    opts:[
+      {t:'72 mg en 100 mL · 7 mL/h', ok:true},
+      {t:'72 mg en 100 mL · 12 mL/h', ok:false},
+      {t:'12 mg en 100 mL · 7 mL/h', ok:false},
+      {t:'84 mg en 100 mL · 7 mL/h', ok:false},
+    ]
+  },
+  // CASO E6 — Infusiones
+  {
+    num:'E6', modulo:'Infusiones continuas',
+    nombre:'Isabella · 8 meses · 8 kg · Miocarditis',
+    texto:'Isabella, 8 meses, 8 kg. Miocarditis aguda con fracción de eyección del 25%. El cardiólogo pediátrico indica dobutamina a 10 mcg/kg/min. Se aplica la Regla de los 6.',
+    sv:[{l:'Edad',v:'8 meses'},{l:'Peso',v:'8 kg'},{l:'FE',v:'25%'},{l:'Dosis',v:'10 mcg/kg/min'}],
+    q:'¿Cuántos mg de dobutamina se preparan, a qué velocidad y qué efecto se busca?',
+    opts:[
+      {t:'48 mg en 100 mL · 10 mL/h · efecto vasopresor (vasoconstricción)', ok:false},
+      {t:'48 mg en 100 mL · 10 mL/h · efecto inotrópico positivo (↑ contractilidad)', ok:true},
+      {t:'48 mg en 100 mL · 8 mL/h · efecto inotrópico positivo', ok:false},
+      {t:'80 mg en 100 mL · 10 mL/h · efecto inotrópico positivo', ok:false},
+    ]
+  },
+];
+
+let evalCodigo = '';
+let evalRespuestas = new Array(EVAL_CASOS.length).fill(null);
+let evalActual = 0;
+let evalIniciada = false;
+let evalTerminada = false;
+
+function irEval(){
+  document.querySelectorAll('.mod-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-eval').classList.add('active');
+  document.getElementById('nav-eval').style.color='#dc2626';
+  evalActual=0;
+  renderEval();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderEval(){
+  if(!evalIniciada){
+    document.getElementById('main').innerHTML=`
+      <div style="background:#fff;border-radius:12px;padding:24px;border:2px solid #dc2626;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:32px;margin-bottom:8px;">📝</div>
+          <h2 style="font-size:18px;font-weight:700;color:#dc2626;margin-bottom:6px;">Evaluación — Taller de Líquidos en Pediatría</h2>
+          <p style="font-size:12.5px;color:#6b7280;line-height:1.6;">6 casos clínicos · Sin calculadora · Sin feedback inmediato<br>Al finalizar verás tu resultado — toma una captura y envíala al docente.</p>
+        </div>
+        <div class="alert alert-red" style="margin-bottom:16px;">
+          <strong>⚠ Instrucciones:</strong><br>
+          · Resuelve cada caso SIN calculadora — usa papel si necesitas<br>
+          · No puedes cambiar una respuesta una vez seleccionada<br>
+          · Al terminar los 6 casos verás tu resultado final con el código<br>
+          · Toma captura de pantalla del resultado y envíala al docente
+        </div>
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Ingresa tu código de participante:</label>
+        <input type="text" class="code-input" id="eval-codigo" placeholder="Ej: G2-03" oninput="this.value=this.value.toUpperCase()">
+        <button class="btn-next" style="background:#dc2626;" onclick="iniciarEval()">Iniciar evaluación →</button>
+      </div>`;
+    return;
+  }
+  if(evalTerminada){mostrarResultadoEval();return;}
+  const c=EVAL_CASOS[evalActual];
+  const letters=['A','B','C','D'];
+  document.getElementById('main').innerHTML=`
+    <div style="background:#fee2e2;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:#991b1b;display:flex;justify-content:space-between;">
+      <span>📝 <strong>Evaluación</strong> — Código: <strong>${evalCodigo}</strong></span>
+      <span>Caso ${evalActual+1} de ${EVAL_CASOS.length}</span>
+    </div>
+    <div class="eval-wrap">
+      <div class="eval-header">
+        <span class="eval-num">${c.num}</span>
+        <span class="eval-title">${c.nombre} · ${c.modulo}</span>
+      </div>
+      <div class="eval-caso">${c.texto}</div>
+      <div class="eval-sv">${c.sv.map(s=>`<div class="eval-sv-item"><span class="eval-sv-label">${s.l}</span><span class="eval-sv-val">${s.v}</span></div>`).join('')}</div>
+      <div class="q-label">Pregunta ${evalActual+1}</div>
+      <div class="q-text">${c.q}</div>
+      <div id="eval-opts">
+        ${c.opts.map((o,i)=>`<div class="eval-opt" id="eopt${i}" onclick="seleccionarEval(${i})">
+          <span class="eval-opt-letter">${letters[i]}</span><span>${o.t}</span></div>`).join('')}
+      </div>
+      <div id="eval-next"></div>
+    </div>`;
+}
+
+function iniciarEval(){
+  const cod=document.getElementById('eval-codigo').value.trim();
+  if(!cod){alert('Ingresa tu código de participante');return;}
+  evalCodigo=cod;
+  evalIniciada=true;
+  evalRespuestas=new Array(EVAL_CASOS.length).fill(null);
+  evalActual=0;
+  evalTerminada=false;
+  renderEval();
+}
+
+function seleccionarEval(idx){
+  if(evalRespuestas[evalActual]!==null)return;
+  evalRespuestas[evalActual]=idx;
+  document.querySelectorAll('.eval-opt').forEach(el=>el.classList.add('disabled'));
+  document.getElementById('eopt'+idx).classList.add('selected');
+  const btn=document.createElement('button');
+  btn.className='btn-next';
+  btn.style.background='#dc2626';
+  const isLast=evalActual>=EVAL_CASOS.length-1;
+  btn.textContent=isLast?'Ver resultado final →':'Siguiente caso →';
+  btn.onclick=()=>{
+    if(isLast){evalTerminada=true;mostrarResultadoEval();}
+    else{evalActual++;renderEval();window.scrollTo({top:0,behavior:'smooth'});}
+  };
+  document.getElementById('eval-next').appendChild(btn);
+}
+
+function mostrarResultadoEval(){
+  const correctas=EVAL_CASOS.filter((_,i)=>evalRespuestas[i]!==null&&EVAL_CASOS[i].opts[evalRespuestas[i]].ok).length;
+  const pct=Math.round(correctas/EVAL_CASOS.length*100);
+  const col=pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
+  const letters=['A','B','C','D'];
+  const filas=EVAL_CASOS.map((c,i)=>{
+    const resp=evalRespuestas[i];
+    const ok=resp!==null&&c.opts[resp].ok;
+    const corrIdx=c.opts.findIndex(o=>o.ok);
+    return `<tr>
+      <td>${c.num}</td>
+      <td>${c.nombre.split('·')[0].trim()}</td>
+      <td>${c.modulo}</td>
+      <td>${resp!==null?letters[resp]:'—'}</td>
+      <td>${letters[corrIdx]}</td>
+      <td class="${ok?'tick-ok':'tick-err'}">${ok?'✓ Correcto':'✗ Incorrecto'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('main').innerHTML=`
+    <div class="result-final" id="resultado-eval">
+      <div style="background:#fee2e2;border-radius:8px;padding:10px 16px;margin-bottom:16px;display:inline-block;">
+        <div class="result-code">Código del participante</div>
+        <div style="font-size:24px;font-weight:700;color:#dc2626;font-family:monospace;letter-spacing:.1em;">${evalCodigo}</div>
+      </div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px;">Resultado — Evaluación Taller de Líquidos en Pediatría</div>
+      <div class="result-score-big" style="color:${col}">${correctas}/${EVAL_CASOS.length}</div>
+      <div style="font-size:15px;font-weight:600;color:${col};margin-bottom:16px;">${pct}%</div>
+      <table class="result-table">
+        <tr><th>Caso</th><th>Paciente</th><th>Módulo</th><th>Tu respuesta</th><th>Correcta</th><th>Resultado</th></tr>
+        ${filas}
+      </table>
+      <div style="background:#f9fafb;border-radius:8px;padding:12px;font-size:11.5px;color:#6b7280;margin-top:8px;">
+        📸 <strong>Toma captura de pantalla de esta página completa y envíala al docente por WhatsApp.</strong>
+      </div>
+      <button class="btn-next" style="background:#6b7280;margin-top:12px;" onclick="location.reload()">Volver al simulador</button>
+    </div>`;
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 renderNav();
